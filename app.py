@@ -37,8 +37,20 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 def load_history():
     """Load analysis history from JSON file"""
     if os.path.exists(app.config['HISTORY_FILE']):
-        with open(app.config['HISTORY_FILE'], "r") as f:
-            return json.load(f)
+        try:
+            with open(app.config['HISTORY_FILE'], "r") as f:
+                content = f.read().strip()
+                if content:  # Check if file is not empty
+                    return json.loads(content)
+                else:
+                    return []  # Return empty list for empty file
+        except json.JSONDecodeError:
+            # If JSON is corrupted, return empty list and log the error
+            app.logger.warning("History file is corrupted, starting with empty history")
+            return []
+        except Exception as e:
+            app.logger.error(f"Error reading history file: {str(e)}")
+            return []
     return []
 
 def extract_text_from_file(filepath, file_extension):
@@ -164,8 +176,14 @@ def analyze():
             all_counts_list = list(all_counter.values())
 
             # Save results
+            # Basic consistency checks before persisting
+            if len(all_words_list) != len(all_counts_list):
+                msg = f"Inconsistent word/count lengths: words={len(all_words_list)} counts={len(all_counts_list)}"
+                app.logger.error(msg)
+                return jsonify({"error": msg}), 500
+
+            # Store in history
             try:
-                # Store in history
                 history = load_history()
                 record = {
                     "id": len(history) + 1,
@@ -180,26 +198,31 @@ def analyze():
                 }
                 history.append(record)
                 save_history(history)
+            except Exception as e:
+                app.logger.error(f"Error saving history: {e}")
+                return jsonify({"error": f"Error saving history: {e}"}), 500
 
-                # Save CSV file for download (with all words)
+            # Save CSV file for download (with all words)
+            try:
                 df = pd.DataFrame({"Word": all_words_list, "Count": all_counts_list})
                 csv_name = f"{os.path.splitext(safe_filename)[0]}_analysis.csv"
                 csv_path = os.path.join(app.config['UPLOAD_FOLDER'], csv_name)
                 df.to_csv(csv_path, index=False)
-
-                return jsonify({
-                    "top_words": top_words,
-                    "top_counts": top_counts,
-                    "all_words": all_words_list,
-                    "all_counts": all_counts_list,
-                    "filename": safe_filename,
-                    "total_words": len(all_words),
-                    "unique_words": len(all_counter),
-                    "csv_download": f"/download/{csv_name}"
-                })
             except Exception as e:
-                app.logger.error(f"Error saving results: {str(e)}")
-                return jsonify({"error": "Error saving analysis results"}), 500
+                app.logger.error(f"Error writing CSV file: {e}")
+                return jsonify({"error": f"Error writing CSV file: {e}"}), 500
+
+            # Return response
+            return jsonify({
+                "top_words": top_words,
+                "top_counts": top_counts,
+                "all_words": all_words_list,
+                "all_counts": all_counts_list,
+                "filename": safe_filename,
+                "total_words": len(all_words),
+                "unique_words": len(all_counter),
+                "csv_download": f"/download/{csv_name}"
+            })
 
         except Exception as e:
             app.logger.error(f"Text processing error: {str(e)}")
@@ -208,6 +231,12 @@ def analyze():
     except Exception as e:
         app.logger.error(f"Unexpected error: {str(e)}")
         return jsonify({"error": "An unexpected error occurred"}), 500
+
+
+@app.route('/api/analyze', methods=['POST'])
+def api_analyze():
+    """Compatibility endpoint: forward to existing /analyze handler."""
+    return analyze()
 
 @app.route('/download/<filename>')
 def download_file(filename):
