@@ -305,8 +305,17 @@
     <div class="panel left">
       <div id="analyzer-panel">
         <div class="drop-zone" id="drop-zone">
-          <p id="drop-instruction">Drop your text file here or click to upload</p>
-          <input type="file" id="file-input" accept=".txt" style="display: none;">
+          <p id="drop-instruction">Drop your file here or click to upload (TXT, DOCX, PDF)</p>
+          <input type="file" id="file-input" accept=".txt,.docx,.pdf" style="display: none;">
+        </div>
+        
+        <!-- URL analysis section -->
+        <div style="margin-top: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 5px; background: #f9f9f9;">
+          <h3>Analyze Content from URL</h3>
+          <div style="display: flex; gap: 10px; margin-top: 10px;">
+            <input type="url" id="url-input" placeholder="https://example.com/article.txt" style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
+            <button id="analyze-url-btn" class="button">Analyze URL</button>
+          </div>
         </div>
 
         <div id="file-actions" style="margin-top:12px; display:flex; align-items:center; gap:10px;">
@@ -359,10 +368,11 @@
     <div class="panel right">
       <h3>Instructions</h3>
       <ol>
-        <li>Upload a text file by dropping it or clicking the upload area</li>
+        <li>Upload a text file (TXT, DOCX, PDF) by dropping it or clicking the upload area</li>
+        <li>Or analyze content directly from a URL</li>
         <li>Optionally add stopwords to exclude common words</li>
         <li>View the analysis results and charts</li>
-        <li>Download the detailed CSV report</li>
+        <li>Download the detailed CSV report (for file uploads only)</li>
       </ol>
       <div class="tips">
         <h4>Tips:</h4>
@@ -370,6 +380,8 @@
           <li>Larger files may take longer to process</li>
           <li>Use stopwords to filter out common words</li>
           <li>Check the history tab for past analyses</li>
+          <li>Supported formats: TXT, DOCX, PDF</li>
+          <li>You can also analyze content from URLs</li>
         </ul>
       </div>
     </div>
@@ -516,8 +528,12 @@
 
       function selectFile(file) {
         if (!file) return;
-        if (!file.name.endsWith('.txt')) {
-          alert('Please upload a text (.txt) file.');
+        
+        // Check file extension
+        const allowedExtensions = ['.txt', '.docx', '.pdf'];
+        const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
+        if (!allowedExtensions.includes(fileExtension)) {
+          alert('Please upload a text (.txt), Word (.docx), or PDF (.pdf) file.');
           return;
         }
 
@@ -640,7 +656,7 @@
           lastAnalysisData = data;
 
           // Reset drop zone instruction
-          document.getElementById('drop-instruction').innerHTML = 'Drop your text file here or click to upload';
+          document.getElementById('drop-instruction').innerHTML = 'Drop your file here or click to upload (TXT, DOCX, PDF)';
           document.getElementById('analyze-btn').disabled = false;
 
           // Update statistics
@@ -668,7 +684,7 @@
         })
         .catch(error => {
           console.error('Analysis error:', error);
-          document.getElementById('drop-instruction').innerHTML = 'Drop your text file here or click to upload';
+          document.getElementById('drop-instruction').innerHTML = 'Drop your file here or click to upload (TXT, DOCX, PDF)';
           document.getElementById('analyze-btn').disabled = false;
           alert(error.message || 'An error occurred during analysis. Please try again.');
         });
@@ -860,6 +876,75 @@
             alert('Error loading history detail');
           });
       };
+      
+      // URL analysis functionality
+      document.getElementById('analyze-url-btn').addEventListener('click', analyzeUrl);
+      
+      function analyzeUrl() {
+        const url = document.getElementById('url-input').value.trim();
+        if (!url) {
+          alert('Please enter a URL to analyze.');
+          return;
+        }
+        
+        // Validate URL format
+        try {
+          new URL(url);
+        } catch (e) {
+          alert('Please enter a valid URL.');
+          return;
+        }
+        
+        const stopwords = document.getElementById('stopwords').value;
+        
+        const formData = new FormData();
+        formData.append('url', url);
+        formData.append('stopwords', stopwords);
+        
+        // Show loading state
+        document.getElementById('drop-instruction').innerHTML = 'Analyzing URL content...';
+        document.getElementById('analyze-url-btn').disabled = true;
+        
+        fetch('/analyze_url', {
+          method: 'POST',
+          body: formData
+        })
+        .then(response => {
+          if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+          return response.json();
+        })
+        .then(data => {
+          if (data.error) throw new Error(data.error);
+          
+          // Store the analysis data for stopword updates
+          lastAnalysisData = data;
+          
+          // Reset UI
+          document.getElementById('drop-instruction').innerHTML = 'Drop your file here or click to upload (TXT, DOCX, PDF)';
+          document.getElementById('analyze-url-btn').disabled = false;
+          
+          // Update statistics
+          document.getElementById('total-words').textContent = (data.total_words || 0).toLocaleString();
+          document.getElementById('unique-words').textContent = (data.unique_words || 0).toLocaleString();
+          
+          // Update chart and download link
+          updateChart({ top_words: data.top_words, top_counts: data.top_counts, filename: data.filename });
+          
+          // Hide download link for URL analysis (no CSV download)
+          downloadBtn.style.display = 'none';
+          
+          resultsDiv.style.display = 'block';
+          
+          // Clear previous search results
+          document.getElementById('search-results').style.display = 'none';
+        })
+        .catch(error => {
+          console.error('URL analysis error:', error);
+          document.getElementById('drop-instruction').innerHTML = 'Drop your file here or click to upload (TXT, DOCX, PDF)';
+          document.getElementById('analyze-url-btn').disabled = false;
+          alert(error.message || 'An error occurred during URL analysis. Please try again.');
+        });
+      }
     });
   </script>
 </body>

@@ -5,6 +5,9 @@ import json
 import pandas as pd
 from datetime import datetime
 from collections import Counter
+import requests
+from docx import Document
+from PyPDF2 import PdfReader
 
 # Initialize global variables for PySpark components
 SparkSession = None
@@ -38,6 +41,25 @@ def load_history():
             return json.load(f)
     return []
 
+def extract_text_from_file(filepath, file_extension):
+    """Extract text content from different file types"""
+    if file_extension == '.txt':
+        with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
+            return f.read()
+    elif file_extension == '.docx':
+        doc = Document(filepath)
+        return '\n'.join([paragraph.text for paragraph in doc.paragraphs])
+    elif file_extension == '.pdf':
+        reader = PdfReader(filepath)
+        text = ''
+        for page in reader.pages:
+            text += page.extract_text() + '\n'
+        return text
+    else:
+        # Fallback for unknown file types
+        with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
+            return f.read()
+
 def save_history(history):
     """Save updated history list"""
     with open(app.config['HISTORY_FILE'], "w") as f:
@@ -55,15 +77,13 @@ def clean_text_all_words(text):
     words = [w for w in text.split() if w]  # Don't filter by stopwords here
     return words
 
-def spark_word_count(file_path, stopwords=set()):
+def spark_word_count(text, stopwords=set()):
     """
     Word count implementation using PySpark.
     Falls back to simple implementation if PySpark is not available or fails.
     """
     # For now, always use the simple implementation to avoid linter errors
     # TODO: Re-enable PySpark when we can resolve the import issues
-    with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
-        text = f.read()
     all_words = clean_text_all_words(text)
     filtered_words = [w for w in all_words if w not in stopwords]
     return all_words, filtered_words
@@ -86,8 +106,11 @@ def analyze():
         if not file or not file.filename:
             return jsonify({"error": "No file selected"}), 400
 
-        if not file.filename.endswith('.txt'):
-            return jsonify({"error": "Please upload a text (.txt) file"}), 400
+        # Check file extension
+        allowed_extensions = {'.txt', '.docx', '.pdf'}
+        file_extension = os.path.splitext(file.filename)[1].lower()
+        if file_extension not in allowed_extensions:
+            return jsonify({"error": "Please upload a text (.txt), Word (.docx), or PDF (.pdf) file"}), 400
 
         # Get stopwords
         stopwords_raw = request.form.get('stopwords', '')
@@ -105,10 +128,9 @@ def analyze():
             app.logger.error(f"File save error: {str(e)}")
             return jsonify({"error": "Could not save the uploaded file"}), 500
 
-        # Read text safely
+        # Read text based on file type
         try:
-            with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
-                text = f.read()
+            text = extract_text_from_file(filepath, file_extension)
         except Exception as e:
             app.logger.error(f"File read error: {str(e)}")
             return jsonify({"error": "Could not read the uploaded file"}), 500
@@ -119,7 +141,7 @@ def analyze():
         try:
             # Get all words (without stopwords filtering) for the complete word list
             # Use PySpark if available, otherwise fall back to simple implementation
-            all_words, filtered_words = spark_word_count(filepath, stopwords)
+            all_words, filtered_words = spark_word_count(text, stopwords)
             
             all_counter = Counter(all_words)
             filtered_counter = Counter(filtered_words)
@@ -211,6 +233,79 @@ def history_detail(hid):
             return jsonify(h)
     return jsonify({"error": "History not found"}), 404
 
+@app.route('/analyze_url', methods=['POST'])
+def analyze_url():
+    """Analyze text content from a URL"""
+    try:
+        # Get URL from form data
+        url = request.form.get('url')
+        if not url:
+            return jsonify({"error": "No URL provided"}), 400
+            
+        # Get stopwords
+        stopwords_raw = request.form.get('stopwords', '')
+        stopwords = set(w.strip().lower() for w in stopwords_raw.split(',') if w.strip())
+        
+        # Fetch content from URL
+        try:
+            response = requests.get(url, timeout=30)
+            response.raise_for_status()
+            text = response.text
+        except requests.RequestException as e:
+            return jsonify({"error": f"Could not fetch content from URL: {str(e)}"}), 400
+        
+        if not text.strip():
+            return jsonify({"error": "The URL content is empty"}), 400
+
+        try:
+            # Get all words (without stopwords filtering) for the complete word list
+            all_words = clean_text_all_words(text)
+            all_counter = Counter(all_words)
+            
+            # Get filtered words (with stopwords) for the top words chart
+            filtered_words = clean_text(text, stopwords)
+            if not filtered_words and stopwords:
+                return jsonify({"error": "No valid words found after removing punctuation and stopwords"}), 400
+
+            filtered_counter = Counter(filtered_words)
+            if len(filtered_counter) == 0:
+                return jsonify({"error": "No valid words found in the text"}), 400
+
+            # Get top words (filtered by stopwords)
+            top = filtered_counter.most_common(15)
+            if not top:
+                return jsonify({"error": "Could not analyze word frequency"}), 400
+                
+            top_words, top_counts = zip(*top)
+            
+            # Convert tuples to lists for JSON serialization
+            top_words = list(top_words)
+            top_counts = list(top_counts)
+            
+            # Prepare complete word list (all words with counts)
+            all_words_list = list(all_counter.keys())
+            all_counts_list = list(all_counter.values())
+
+            # Return results
+            return jsonify({
+                "top_words": top_words,
+                "top_counts": top_counts,
+                "all_words": all_words_list,
+                "all_counts": all_counts_list,
+                "filename": url,
+                "total_words": len(all_words),
+                "unique_words": len(all_counter)
+            })
+            
+        except Exception as e:
+            app.logger.error(f"Text processing error: {str(e)}")
+            return jsonify({"error": "Error processing the text content"}), 500
+
+    except Exception as e:
+        app.logger.error(f"Unexpected error: {str(e)}")
+        return jsonify({"error": "An unexpected error occurred"}), 500
+
+
 @app.route('/api/update_analysis', methods=['POST'])
 def update_analysis():
     """Update analysis with new stopwords without re-uploading the file"""
@@ -228,10 +323,10 @@ def update_analysis():
         if not os.path.exists(filepath):
             return jsonify({"error": "File not found"}), 404
             
-        # Read text safely
+        # Read text based on file type
         try:
-            with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
-                text = f.read()
+            file_extension = os.path.splitext(filename)[1].lower()
+            text = extract_text_from_file(filepath, file_extension)
         except Exception as e:
             app.logger.error(f"File read error: {str(e)}")
             return jsonify({"error": "Could not read the file"}), 500
