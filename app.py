@@ -37,20 +37,8 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 def load_history():
     """Load analysis history from JSON file"""
     if os.path.exists(app.config['HISTORY_FILE']):
-        try:
-            with open(app.config['HISTORY_FILE'], "r") as f:
-                content = f.read().strip()
-                if content:  # Check if file is not empty
-                    return json.loads(content)
-                else:
-                    return []  # Return empty list for empty file
-        except json.JSONDecodeError:
-            # If JSON is corrupted, return empty list and log the error
-            app.logger.warning("History file is corrupted, starting with empty history")
-            return []
-        except Exception as e:
-            app.logger.error(f"Error reading history file: {str(e)}")
-            return []
+        with open(app.config['HISTORY_FILE'], "r") as f:
+            return json.load(f)
     return []
 
 def extract_text_from_file(filepath, file_extension):
