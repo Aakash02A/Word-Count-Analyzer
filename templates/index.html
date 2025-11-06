@@ -4,7 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Word Count Analyzer</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
   <style>
     /* Add CSS styles here */
     :root {
@@ -130,6 +131,27 @@
       padding: 0.5rem;
       border: 1px solid #ddd;
       border-radius: 5px;
+    }
+
+    .search-input-group {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+
+    .search-input-group input {
+      flex: 1;
+      padding: 0.5rem;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+
+    #search-results {
+      margin-top: 1rem;
+      padding: 1rem;
+      background: #f8f9fa;
+      border-radius: 5px;
+      display: none;
     }
 
     .chart-container {
@@ -298,6 +320,19 @@
             <div class="stopwords-input-group">
               <input type="text" id="stopwords" placeholder="the, and, or, ...">
               <button id="apply-stopwords" class="button">Apply</button>
+            </div>
+          </div>
+          
+          <!-- Search bar for particular words -->
+          <div class="search-section" style="margin-top: 1.5rem;">
+            <label>Search for specific words:</label>
+            <div class="search-input-group" style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+              <input type="text" id="word-search" placeholder="Enter a word to search...">
+              <button id="search-word-btn" class="button">Search</button>
+            </div>
+            <div id="search-results" style="margin-top: 1rem; padding: 1rem; background: #f8f9fa; border-radius: 5px; display: none;">
+              <h4>Search Results:</h4>
+              <p id="search-result-text"></p>
             </div>
           </div>
         </div>
@@ -525,6 +560,57 @@
       
       applyStopwordsBtn.addEventListener('click', handleStopwordsUpdate);
 
+      // Handle word search functionality
+      const wordSearchInput = document.getElementById('word-search');
+      const searchWordBtn = document.getElementById('search-word-btn');
+      const searchResultsDiv = document.getElementById('search-results');
+      const searchResultText = document.getElementById('search-result-text');
+      
+      function searchForWord() {
+        const searchTerm = wordSearchInput.value.trim().toLowerCase();
+        if (!searchTerm) {
+          alert('Please enter a word to search for.');
+          return;
+        }
+        
+        if (!lastAnalysisData) {
+          alert('Please analyze a file first.');
+          return;
+        }
+        
+        // Search in all words
+        const allWords = lastAnalysisData.all_words || [];
+        const allCounts = lastAnalysisData.all_counts || [];
+        
+        // Find the word and its count
+        let found = false;
+        let count = 0;
+        
+        for (let i = 0; i < allWords.length; i++) {
+          if (allWords[i].toLowerCase() === searchTerm) {
+            found = true;
+            count = allCounts[i];
+            break;
+          }
+        }
+        
+        // Display results
+        searchResultsDiv.style.display = 'block';
+        if (found) {
+          searchResultText.innerHTML = `The word <strong>"${searchTerm}"</strong> appears <strong>${count}</strong> time(s) in the document.`;
+        } else {
+          searchResultText.innerHTML = `The word <strong>"${searchTerm}"</strong> was not found in the document.`;
+        }
+      }
+      
+      wordSearchInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          searchForWord();
+        }
+      });
+      
+      searchWordBtn.addEventListener('click', searchForWord);
+
       function analyzeFile() {
         if (!selectedFile) {
           alert('No file selected. Please select a .txt file first.');
@@ -576,6 +662,9 @@
           selectedFile = null;
           document.getElementById('selected-filename').textContent = 'No file selected';
           document.getElementById('analyze-btn').style.display = 'none';
+          
+          // Clear previous search results
+          searchResultsDiv.style.display = 'none';
         })
         .catch(error => {
           console.error('Analysis error:', error);
