@@ -17,13 +17,13 @@ A Flask-based web application for analyzing word frequencies in text documents, 
 ---
 
 ## Usage
-### Required Pacakges Download:
+### Required Pacakges Download
 
 ```
 pip install -r requirements.txt
 ```
 
-### Start the application:
+### Start the application
 
 ```
 python pyshark_analyzer.py
@@ -31,7 +31,7 @@ python app.py
 ```
 Open your browser and navigate to http://localhost:5000
 
-### Use the web interface to:
+### Use the web interface to
 
 - Upload text files (TXT, DOCX, PDF)
 - Enter stopwords (comma-separated)
@@ -39,6 +39,7 @@ Open your browser and navigate to http://localhost:5000
 - Download analysis results
 - Browse analysis history
 
+---
 
 ## API Endpoints
 ### Analyze File Upload
@@ -78,12 +79,12 @@ Parameters:
 
 The application maintains a persistent history of all analyses in `history.json`.
 
-## History File Location
+### History File Location
 - **Path**: `./history.json` (in application root directory)
 - **Format**: JSON array of analysis records
 - **Auto-generated**: Created automatically on first analysis
 
-## History Record Structure
+### History Record Structure
 
 Each analysis is stored as a JSON object:
 
@@ -102,25 +103,25 @@ Each analysis is stored as a JSON object:
 
 ```
 
-## Fields Description
+### Fields Description
 
-- id: Unique sequential identifier
-- filename: Original uploaded filename
-- stored_at: ISO timestamp of analysis
-- top_words: Top 15 most frequent words (after stopwords)
-- top_counts: Corresponding counts for top words
-- all_words: All unique words found in text
-- all_counts: Frequency counts for all words
-- total_words: Total word count in document
-- unique_words: Number of unique words
+- **id**: Unique sequential identifier
+- **filename**: Original uploaded filename
+- **stored_at**: ISO timestamp of analysis
+- **top_words**: Top 15 most frequent words (after stopwords)
+- **top_counts**: Corresponding counts for top words
+- **all_words**: All unique words found in text
+- **all_counts**: Frequency counts for all words
+- **total_words**: Total word count in document
+- **unique_words**: Number of unique words
 
 ---
 
 ## Supported File Formats
 
-- TXT: Plain text files
-- DOCX: Microsoft Word documents
-- PDF: Portable Document Format files
+- **TXT**: Plain text files
+- **DOCX**: Microsoft Word documents
+- **PDF**: Portable Document Format files
 
 ## Features
 
