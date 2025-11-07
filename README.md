@@ -17,6 +17,12 @@ A Flask-based web application for analyzing word frequencies in text documents, 
 ---
 
 ## Usage
+### Required Pacakges Download:
+
+```
+pip install -r requirements.txt
+```
+
 ### Start the application:
 
 ```
