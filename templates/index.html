@@ -1,20 +1,34 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Word Count Analyzer</title>
+  <title>Word Intelligence & PySpark Analytics Platform</title>
   <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
   <style>
-    /* Add CSS styles here */
+    /* Enterprise SaaS Dashboard Theme */
     :root {
-      --primary: #2c3e50;
-      --secondary: #3498db;
-      --accent: #e74c3c;
-      --light: #ecf0f1;
-      --dark: #2c3e50;
-      --muted: #7f8c8d;
+      --primary-blue: #0C66E4;
+      --primary-hover: #0052CC;
+      --secondary-blue: #1D7AFC;
+      --success-green: #22C55E;
+      --warning-orange: #F59E0B;
+      --danger-red: #EF4444;
+      --bg-main: #F8FAFC;
+      --bg-card: #FFFFFF;
+      --text-primary: #0F172A;
+      --text-secondary: #475569;
+      --text-muted: #94A3B8;
+      --border-light: #E2E8F0;
+      --border-medium: #CBD5E1;
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+      --sidebar-width: 240px;
+      --topbar-height: 70px;
     }
 
     * {
@@ -24,188 +38,732 @@
     }
 
     body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
+      background: var(--bg-main);
       min-height: 100vh;
-      color: #333;
+      color: var(--text-primary);
+      line-height: 1.6;
     }
 
-    header {
-      background: rgba(255, 255, 255, 0.95);
-      padding: 1rem 2rem;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    /* Layout Structure */
+    .app-container {
       display: flex;
-      justify-content: space-between;
+      min-height: 100vh;
+    }
+
+    /* Sidebar Navigation */
+    .sidebar {
+      width: var(--sidebar-width);
+      background: var(--bg-card);
+      border-right: 1px solid var(--border-light);
+      position: fixed;
+      height: 100vh;
+      overflow-y: auto;
+      z-index: 100;
+      box-shadow: var(--shadow-sm);
+      transition: transform 0.3s ease;
+    }
+
+    .sidebar-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 99;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .sidebar-overlay.active {
+      opacity: 1;
+    }
+
+    .sidebar-header {
+      padding: 1.5rem 1.25rem;
+      border-bottom: 1px solid var(--border-light);
+    }
+
+    .sidebar-logo {
+      font-size: 1.125rem;
+      font-weight: 700;
+      color: var(--primary-blue);
+      letter-spacing: -0.025em;
+    }
+
+    .sidebar-nav {
+      padding: 1rem 0.75rem;
+    }
+
+    .nav-section {
+      margin-bottom: 1.5rem;
+    }
+
+    .nav-section-title {
+      font-size: 0.6875rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      padding: 0 0.75rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .nav-item {
+      display: flex;
       align-items: center;
+      padding: 0.625rem 0.75rem;
+      border-radius: 8px;
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 0.875rem;
+      font-weight: 500;
+      margin-bottom: 0.25rem;
+      transition: all 0.15s ease;
+      cursor: pointer;
     }
 
-    h1 {
-      color: var(--primary);
-      font-size: 1.8rem;
+    .nav-item:hover {
+      background: var(--bg-main);
+      color: var(--text-primary);
     }
 
-    nav {
+    .nav-item.active {
+      background: #EFF6FF;
+      color: var(--primary-blue);
+      font-weight: 600;
+    }
+
+    .nav-icon {
+      margin-right: 0.75rem;
+      font-size: 1.125rem;
+    }
+
+    /* Main Content Area */
+    .main-content {
+      margin-left: var(--sidebar-width);
+      flex: 1;
       display: flex;
+      flex-direction: column;
+    }
+
+    /* Top Action Bar */
+    .topbar {
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border-light);
+      padding: 1rem 2rem;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 70px;
+    }
+
+    .topbar-left {
+      display: flex;
+      align-items: center;
       gap: 1rem;
     }
 
-    nav a {
-      text-decoration: none;
-      padding: 0.5rem 1rem;
-      border-radius: 5px;
-      color: var(--muted);
-      transition: all 0.3s ease;
-    }
-
-    nav a.active-tab {
-      background: var(--secondary);
-      color: white;
-    }
-
-    nav a:hover:not(.active-tab) {
-      background: var(--light);
-    }
-
-    main {
-      display: grid;
-      grid-template-columns: 2fr 1fr;
-      gap: 2rem;
-      padding: 2rem;
-      max-width: 1400px;
-      margin: 0 auto;
-    }
-
-    .panel {
-      background: rgba(255, 255, 255, 0.95);
-      border-radius: 15px;
-      padding: 2rem;
-      box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
-      backdrop-filter: blur(10px);
-    }
-
-    .panel.left {
-      min-height: 600px;
-    }
-
-    .drop-zone {
-      border: 3px dashed var(--secondary);
-      border-radius: 10px;
-      padding: 3rem;
-      text-align: center;
+    .menu-toggle {
+      display: none;
+      background: none;
+      border: none;
+      font-size: 1.5rem;
       cursor: pointer;
-      transition: all 0.3s ease;
-      background: rgba(52, 152, 219, 0.1);
+      color: var(--text-primary);
+      padding: 0.5rem;
+      border-radius: 8px;
+      transition: background 0.2s;
     }
 
-    .drop-zone:hover, .drop-zone.dragover {
-      background: rgba(52, 152, 219, 0.2);
-      border-color: var(--primary);
+    .menu-toggle:hover {
+      background: var(--bg-main);
     }
 
-    .button {
-      background: var(--secondary);
+    .breadcrumbs {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.875rem;
+    }
+
+    .breadcrumb-item {
+      color: var(--text-secondary);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .breadcrumb-item:hover {
+      color: var(--primary-blue);
+    }
+
+    .breadcrumb-separator {
+      color: var(--text-muted);
+    }
+
+    .breadcrumb-current {
+      color: var(--text-primary);
+      font-weight: 600;
+    }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .topbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .topbar-icon-btn {
+      background: none;
+      border: none;
+      font-size: 1.25rem;
+      color: var(--text-secondary);
+      cursor: pointer;
+      padding: 0.5rem;
+      border-radius: 8px;
+      transition: all 0.2s;
+      position: relative;
+    }
+
+    .topbar-icon-btn:hover {
+      background: var(--bg-main);
+      color: var(--primary-blue);
+    }
+
+    .notification-badge {
+      position: absolute;
+      top: 0.25rem;
+      right: 0.25rem;
+      background: var(--danger-red);
+      color: white;
+      font-size: 0.625rem;
+      font-weight: 600;
+      padding: 0.125rem 0.375rem;
+      border-radius: 10px;
+      min-width: 1rem;
+      text-align: center;
+    }
+
+    .user-profile {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.5rem 0.75rem;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .user-profile:hover {
+      background: var(--bg-main);
+    }
+
+    .user-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary-blue), var(--secondary-blue));
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 0.875rem;
+    }
+
+    .user-info {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .user-name {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      line-height: 1.2;
+    }
+
+    .user-role {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      line-height: 1.2;
+    }
+
+    .btn-primary {
+      background: linear-gradient(180deg, var(--primary-blue) 0%, var(--secondary-blue) 100%);
       color: white;
       border: none;
-      padding: 0.5rem 1rem;
-      border-radius: 5px;
+      padding: 0.75rem 1.5rem;
+      border-radius: 8px;
+      font-size: 0.9375rem;
+      font-weight: 600;
       cursor: pointer;
-      transition: background 0.3s ease;
-    }
-
-    .button:hover {
-      background: var(--primary);
-    }
-
-    .options {
-      margin: 1.5rem 0;
-    }
-
-    .stopwords-input-group {
-      display: flex;
+      transition: all 0.2s ease;
+      box-shadow: var(--shadow-md);
+      display: inline-flex;
+      align-items: center;
       gap: 0.5rem;
-      margin-top: 0.5rem;
     }
 
-    .stopwords input {
-      flex: 1;
-      padding: 0.5rem;
-      border: 1px solid #ddd;
-      border-radius: 5px;
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-lg);
     }
 
-    .search-input-group {
-      display: flex;
+    .btn-secondary {
+      background: white;
+      color: var(--text-primary);
+      border: 1px solid var(--border-medium);
+      padding: 0.75rem 1.5rem;
+      border-radius: 8px;
+      font-size: 0.9375rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
       gap: 0.5rem;
-      margin-top: 0.5rem;
     }
 
-    .search-input-group input {
+    .btn-secondary:hover {
+      background: var(--bg-main);
+      border-color: var(--primary-blue);
+      color: var(--primary-blue);
+    }
+
+    .file-types-indicator {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+    }
+
+    .file-type-badge {
+      background: var(--bg-main);
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      font-weight: 500;
+      font-size: 0.75rem;
+    }
+
+    /* Content Area with Tabs */
+    .content-wrapper {
+      padding: 2rem;
       flex: 1;
-      padding: 0.5rem;
-      border: 1px solid #ddd;
-      border-radius: 5px;
     }
 
-    #search-results {
-      margin-top: 1rem;
-      padding: 1rem;
-      background: #f8f9fa;
-      border-radius: 5px;
+    .tabs-container {
+      background: var(--bg-card);
+      border-radius: 12px;
+      box-shadow: var(--shadow-md);
+      overflow: hidden;
+    }
+
+    .tabs-header {
+      display: flex;
+      border-bottom: 1px solid var(--border-light);
+      background: #FAFBFC;
+      padding: 0 1.5rem;
+    }
+
+    .tab-button {
+      padding: 1rem 1.5rem;
+      border: none;
+      background: transparent;
+      color: var(--text-secondary);
+      font-size: 0.9375rem;
+      font-weight: 600;
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+
+    .tab-button:hover {
+      color: var(--text-primary);
+      background: rgba(12, 102, 228, 0.05);
+    }
+
+    .tab-button.active {
+      color: var(--primary-blue);
+      border-bottom-color: var(--primary-blue);
+      background: white;
+    }
+
+    .tab-content {
       display: none;
+      padding: 2rem;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    /* Summary Cards Grid */
+    .summary-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .summary-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-light);
+      border-radius: 12px;
+      padding: 1.5rem;
+      box-shadow: var(--shadow-sm);
+      transition: all 0.2s ease;
+    }
+
+    .summary-card:hover {
+      box-shadow: var(--shadow-md);
+      transform: translateY(-2px);
+    }
+
+    .summary-card-label {
+      font-size: 0.8125rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 0.5rem;
+    }
+    
+    .card-value-wrapper {
+      position: relative;
+      min-height: 3rem;
+    }
+
+    .summary-card-value {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 0.25rem;
+    }
+
+    .summary-card-meta {
+      font-size: 0.8125rem;
+      color: var(--text-secondary);
+    }
+
+    .summary-card-icon {
+      float: right;
+      font-size: 2rem;
+      opacity: 0.15;
+      margin-top: -0.5rem;
+    }
+
+    /* Chart Sections */
+    .chart-section {
+      background: var(--bg-card);
+      border: 1px solid var(--border-light);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .chart-section-title {
+      font-size: 1.125rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 1.5rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid var(--border-light);
     }
 
     .chart-container {
       height: 400px;
-      margin: 1.5rem 0;
+      position: relative;
     }
 
-    .stats {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 1rem;
-      margin: 1rem 0;
-    }
-
-    .stats p {
-      background: var(--light);
-      padding: 1rem;
-      border-radius: 5px;
-      text-align: center;
-    }
-
-    .history-item {
-      border: 1px solid #ddd;
-      border-radius: 10px;
-      padding: 1rem;
-      margin: 0.5rem 0;
-      background: white;
-    }
-
-    .history-header {
+    .chart-empty-state {
       display: flex;
-      justify-content: space-between;
+      flex-direction: column;
       align-items: center;
+      justify-content: center;
+      height: 100%;
+      color: var(--text-muted);
+      text-align: center;
+      padding: 2rem;
+    }
+
+    .chart-empty-icon {
+      font-size: 4rem;
+      margin-bottom: 1rem;
+      opacity: 0.3;
+    }
+
+    .chart-empty-title {
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: var(--text-secondary);
       margin-bottom: 0.5rem;
     }
 
-    .history-stats {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 0.5rem;
-      margin: 0.5rem 0;
+    .chart-empty-text {
+      font-size: 0.875rem;
+      color: var(--text-muted);
     }
 
-    .stat-item {
+    .chart-container canvas {
+      display: none;
+    }
+
+    .chart-container.has-data canvas {
+      display: block;
+    }
+
+    .chart-container.has-data .chart-empty-state {
+      display: none;
+    }
+
+    .chart-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+      gap: 1.5rem;
+    }
+
+    /* PySpark Execution Panel */
+    .spark-panel {
+      background: var(--bg-card);
+      border: 1px solid var(--border-light);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .spark-header {
       display: flex;
       justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--border-light);
     }
 
-    .history-actions {
-      display: flex;
+    .spark-status {
+      display: inline-flex;
+      align-items: center;
       gap: 0.5rem;
-      margin-top: 0.5rem;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 0.875rem;
     }
 
+    .spark-status.idle {
+      background: #F1F5F9;
+      color: var(--text-secondary);
+    }
+
+    .spark-status.running {
+      background: #DBEAFE;
+      color: #1E40AF;
+    }
+
+    .spark-status.succeeded {
+      background: #DCFCE7;
+      color: #16A34A;
+    }
+
+    .spark-status.failed {
+      background: #FEE2E2;
+      color: #DC2626;
+    }
+
+    .spark-progress-bar {
+      height: 8px;
+      background: var(--bg-main);
+      border-radius: 999px;
+      overflow: hidden;
+      margin-bottom: 1.5rem;
+    }
+
+    .spark-progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--primary-blue), var(--secondary-blue));
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+
+    .spark-metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .spark-metric {
+      background: var(--bg-main);
+      padding: 1rem;
+      border-radius: 8px;
+      border: 1px solid var(--border-light);
+    }
+
+    .spark-metric-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      letter-spacing: 0.05em;
+      margin-bottom: 0.5rem;
+    }
+
+    .spark-metric-value {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .spark-dag {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1.5rem;
+      background: var(--bg-main);
+      border-radius: 8px;
+      overflow-x: auto;
+    }
+
+    .dag-node {
+      background: white;
+      border: 2px solid var(--border-medium);
+      padding: 0.75rem 1.25rem;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.875rem;
+      color: var(--text-primary);
+      white-space: nowrap;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .dag-arrow {
+      color: var(--text-muted);
+      font-size: 1.25rem;
+    }
+
+    /* Raw Data Table */
+    .table-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .search-box {
+      flex: 1;
+      min-width: 250px;
+      max-width: 400px;
+      position: relative;
+    }
+
+    .search-box input {
+      width: 100%;
+      padding: 0.625rem 1rem 0.625rem 2.5rem;
+      border: 1px solid var(--border-medium);
+      border-radius: 8px;
+      font-size: 0.875rem;
+      transition: all 0.2s ease;
+    }
+
+    .search-box input:focus {
+      outline: none;
+      border-color: var(--primary-blue);
+      box-shadow: 0 0 0 3px rgba(12, 102, 228, 0.1);
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 0.875rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+    }
+
+    .table-container {
+      overflow-x: auto;
+      border: 1px solid var(--border-light);
+      border-radius: 8px;
+    }
+
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.875rem;
+    }
+
+    .data-table thead {
+      background: var(--bg-main);
+      position: sticky;
+      top: 0;
+    }
+
+    .data-table th {
+      padding: 0.875rem 1rem;
+      text-align: left;
+      font-weight: 600;
+      color: var(--text-secondary);
+      border-bottom: 2px solid var(--border-light);
+      white-space: nowrap;
+    }
+
+    .data-table td {
+      padding: 0.875rem 1rem;
+      border-bottom: 1px solid var(--border-light);
+      color: var(--text-primary);
+    }
+
+    .data-table tbody tr:hover {
+      background: var(--bg-main);
+    }
+
+    .pagination {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 0.5rem;
+      margin-top: 1.5rem;
+    }
+
+    .pagination-btn {
+      padding: 0.5rem 0.875rem;
+      border: 1px solid var(--border-medium);
+      background: white;
+      border-radius: 6px;
+      font-size: 0.875rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .pagination-btn:hover:not(:disabled) {
+      background: var(--bg-main);
+      border-color: var(--primary-blue);
+    }
+
+    .pagination-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .pagination-info {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+    }
+
+    /* Modal Styles */
     .modal {
       display: none;
       position: fixed;
@@ -214,7 +772,8 @@
       top: 0;
       width: 100%;
       height: 100%;
-      background: rgba(0,0,0,0.5);
+      background: rgba(15, 23, 42, 0.7);
+      backdrop-filter: blur(4px);
     }
 
     .modal.show {
@@ -225,279 +784,1760 @@
 
     .modal-content {
       background: white;
-      border-radius: 10px;
+      border-radius: 16px;
       width: 90%;
-      max-width: 800px;
+      max-width: 600px;
       max-height: 80vh;
-      overflow: auto;
+      overflow: hidden;
+      box-shadow: var(--shadow-xl);
     }
 
     .modal-header {
-      padding: 1rem;
-      border-bottom: 1px solid #ddd;
+      padding: 1.5rem;
+      border-bottom: 1px solid var(--border-light);
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
 
+    .modal-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
     .close-modal {
       font-size: 1.5rem;
       cursor: pointer;
+      color: var(--text-muted);
+      transition: color 0.2s ease;
+    }
+
+    .close-modal:hover {
+      color: var(--text-primary);
     }
 
     .modal-body {
-      padding: 1rem;
+      padding: 1.5rem;
+      overflow-y: auto;
+      max-height: calc(80vh - 120px);
     }
 
-    table {
-      width: 100%;
-      border-collapse: collapse;
+    .form-group {
+      margin-bottom: 1.5rem;
     }
 
-    th, td {
-      padding: 0.5rem;
-      text-align: left;
-      border-bottom: 1px solid #ddd;
-    }
-
-    th {
-      background: var(--light);
-    }
-
-    footer {
-      text-align: center;
-      padding: 1rem;
-      color: white;
-      background: rgba(0,0,0,0.3);
-    }
-
-    .tips {
-      margin-top: 1.5rem;
-      padding: 1rem;
-      background: rgba(52, 152, 219, 0.1);
-      border-radius: 10px;
-    }
-
-    .tips h4 {
-      color: var(--primary);
+    .form-label {
+      display: block;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--text-secondary);
       margin-bottom: 0.5rem;
     }
 
-    .tips ul {
-      padding-left: 1.5rem;
+    .form-input {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      border: 1px solid var(--border-medium);
+      border-radius: 8px;
+      font-size: 0.9375rem;
+      transition: all 0.2s ease;
     }
 
-    .tips li {
-      margin: 0.25rem 0;
+    .form-input:focus {
+      outline: none;
+      border-color: var(--primary-blue);
+      box-shadow: 0 0 0 3px rgba(12, 102, 228, 0.1);
+    }
+
+    .drop-zone {
+      border: 2px dashed var(--border-medium);
+      border-radius: 12px;
+      padding: 3rem 2rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      background: var(--bg-main);
+    }
+
+    .drop-zone:hover,
+    .drop-zone.dragover {
+      background: #EFF6FF;
+      border-color: var(--primary-blue);
+    }
+
+    .drop-zone-text {
+      font-size: 0.9375rem;
+      color: var(--text-secondary);
+      margin-bottom: 0.5rem;
+    }
+
+    .drop-zone-hint {
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+    }
+
+    /* Utility Classes */
+    .hidden {
+      display: none !important;
+    }
+
+    .text-center {
+      text-align: center;
+    }
+
+    .mb-1 {
+      margin-bottom: 0.5rem;
+    }
+
+    .mb-2 {
+      margin-bottom: 1rem;
+    }
+
+    .mb-3 {
+      margin-bottom: 1.5rem;
+    }
+
+    .mb-4 {
+      margin-bottom: 2rem;
+    }
+
+    .mt-1 {
+      margin-top: 0.5rem;
+    }
+
+    .mt-2 {
+      margin-top: 1rem;
+    }
+
+    .mt-3 {
+      margin-top: 1.5rem;
+    }
+
+    .mt-4 {
+      margin-top: 2rem;
+    }
+
+    /* Loading State */
+    .loading-spinner {
+      display: inline-block;
+      width: 1rem;
+      height: 1rem;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* Individual chart loading overlay */
+    .summary-card {
+      position: relative;
+    }
+    
+    .chart-container {
+      position: relative;
+    }
+    
+    .chart-loading {
+      position: absolute;
+      inset: 0;
+      background: rgba(255, 255, 255, 0.95);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 0.5rem;
+      z-index: 5;
+      border-radius: 8px;
+    }
+
+    .chart-loading.active {
+      display: flex;
+    }
+
+    .chart-loading-spinner {
+      width: 32px;
+      height: 32px;
+      border: 3px solid #E2E8F0;
+      border-top-color: var(--primary-blue);
+      border-radius: 50%;
+      animation: spinner-rotate 0.8s linear infinite;
+    }
+
+    .chart-loading-text {
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--text-muted);
+    }
+
+    @keyframes spinner-rotate {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* ========== History Tab Styles ========== */
+    .history-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 2rem 2rem 1.5rem;
+      border-bottom: 1px solid var(--border-light);
+    }
+
+    .history-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 0.25rem;
+    }
+
+    .history-subtitle {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+    }
+
+    .history-filters {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1.5rem 2rem;
+      background: var(--bg-main);
+      border-bottom: 1px solid var(--border-light);
+      flex-wrap: wrap;
+    }
+
+    .filter-chips {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .filter-chip {
+      padding: 0.5rem 1rem;
+      border: 1px solid var(--border-medium);
+      background: var(--bg-card);
+      border-radius: 20px;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+    }
+
+    .filter-chip:hover {
+      border-color: var(--primary-blue);
+      background: #EFF6FF;
+      color: var(--primary-blue);
+    }
+
+    .filter-chip.active {
+      background: var(--primary-blue);
+      border-color: var(--primary-blue);
+      color: white;
+    }
+
+    .history-date-filter {
+      padding: 0.5rem 1rem;
+      border: 1px solid var(--border-medium);
+      border-radius: 8px;
+      background: var(--bg-card);
+      color: var(--text-secondary);
+      font-size: 0.875rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .history-date-filter:hover {
+      border-color: var(--primary-blue);
+    }
+
+    .history-date-filter:focus {
+      outline: none;
+      border-color: var(--primary-blue);
+      box-shadow: 0 0 0 3px rgba(12, 102, 228, 0.1);
+    }
+
+    .history-table-container {
+      padding: 0 2rem 2rem;
+      overflow-x: auto;
+    }
+
+    .history-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--bg-card);
+    }
+
+    .history-table thead {
+      background: var(--bg-main);
+      border-bottom: 2px solid var(--border-light);
+    }
+
+    .history-table th {
+      padding: 1rem;
+      text-align: left;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+    }
+
+    .history-table tbody tr {
+      border-bottom: 1px solid var(--border-light);
+      transition: background 0.2s ease;
+      cursor: pointer;
+    }
+
+    .history-table tbody tr:hover {
+      background: var(--bg-main);
+    }
+
+    .history-table td {
+      padding: 1rem;
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+    }
+
+    .history-type-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      font-size: 1.25rem;
+      background: var(--bg-main);
+    }
+
+    .history-filename {
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .history-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+      padding: 0.25rem 0.75rem;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .history-status.completed {
+      background: #DCFCE7;
+      color: #16A34A;
+    }
+
+    .history-status.failed {
+      background: #FEE2E2;
+      color: #DC2626;
+    }
+
+    .history-actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .history-action-btn {
+      padding: 0.375rem 0.75rem;
+      border: 1px solid var(--border-medium);
+      background: var(--bg-card);
+      border-radius: 6px;
+      font-size: 0.8125rem;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .history-action-btn:hover {
+      border-color: var(--primary-blue);
+      color: var(--primary-blue);
+      background: #EFF6FF;
+    }
+
+    /* History Detail Modal Styles */
+    .history-detail-summary {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1rem;
+      padding: 1.5rem;
+      background: var(--bg-main);
+      border-radius: 8px;
+      margin-bottom: 1.5rem;
+    }
+
+    .history-detail-field {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .history-detail-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+    }
+
+    .history-detail-value {
+      font-size: 0.9375rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .history-detail-section {
+      margin-bottom: 1.5rem;
+    }
+
+    .history-detail-section-title {
+      font-size: 0.875rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 0.75rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border-light);
+    }
+
+    .history-detail-words {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .word-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.375rem 0.75rem;
+      background: var(--bg-main);
+      border: 1px solid var(--border-light);
+      border-radius: 6px;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+    }
+
+    .history-detail-stopwords {
+      padding: 1rem;
+      background: var(--bg-main);
+      border-radius: 8px;
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+    }
+
+    .history-detail-actions {
+      display: flex;
+      gap: 0.75rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border-light);
+      flex-wrap: wrap;
+    }
+
+    .btn-danger {
+      padding: 0.625rem 1.25rem;
+      border: 1px solid var(--danger-red);
+      background: var(--danger-red);
+      color: white;
+      border-radius: 8px;
+      font-size: 0.9375rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .btn-danger:hover {
+      background: #DC2626;
+      border-color: #DC2626;
+      box-shadow: var(--shadow-md);
+    }
+
+    /* ========== Spark UI Tab Styles ========== */
+    .spark-ui-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 2rem 2rem 1.25rem;
+      border-bottom: 1px solid var(--border-light);
+      gap: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .spark-ui-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 0.4rem;
+    }
+
+    .spark-ui-subtitle {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      max-width: 520px;
+      line-height: 1.4;
+    }
+
+    .spark-controls {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .spark-kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1rem;
+      padding: 1.25rem 2rem 0.5rem;
+    }
+
+    .spark-kpi-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-light);
+      border-radius: 12px;
+      padding: 0.9rem 1rem 0.85rem;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      min-height: 92px;
+    }
+
+    .spark-kpi-label {
+      font-size: 0.65rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+    }
+
+    .spark-kpi-value {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      letter-spacing: -0.5px;
+    }
+
+    .spark-error-box {
+      margin: 0 2rem 0.75rem;
+      background: #FEF2F2;
+      color: #B91C1C;
+      border: 1px solid #FCA5A5;
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      font-size: 0.8125rem;
+      font-weight: 500;
+    }
+
+    .spark-iframe-wrapper {
+      padding: 0.5rem 2rem 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      min-height: 520px;
+    }
+
+    .spark-iframe {
+      width: 100%;
+      flex: 1;
+      min-height: 500px;
+      border: 1px solid var(--border-light);
+      border-radius: 12px;
+      background: white;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .spark-fallback {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.25rem;
+      width: 100%;
+      flex: 1;
+      min-height: 500px;
+      border: 2px dashed var(--border-light);
+      border-radius: 12px;
+      background: var(--bg-main);
+      color: var(--text-secondary);
+      text-align: center;
+    }
+
+    @media (max-width: 768px) {
+      .spark-kpi-grid {
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      }
+
+      .spark-ui-header {
+        padding: 1.5rem 1.5rem 1rem;
+      }
+
+      .spark-iframe-wrapper {
+        padding: 0.5rem 1.5rem 1.5rem;
+      }
+    }
+
+    /* Responsive Design */
+    @media (max-width: 1024px) {
+      .topbar {
+        padding: 1rem 1.5rem;
+      }
+
+      .user-info {
+        display: none;
+      }
+    }
+
+    @media (max-width: 768px) {
+      :root {
+        --sidebar-width: 280px;
+      }
+
+      .sidebar {
+        transform: translateX(-100%);
+      }
+
+      .sidebar.mobile-open {
+        transform: translateX(0);
+      }
+
+      .sidebar-overlay {
+        display: block;
+      }
+
+      .main-content {
+        margin-left: 0;
+      }
+
+      .menu-toggle {
+        display: block;
+      }
+
+      .topbar {
+        padding: 0.75rem 1rem;
+      }
+
+      .breadcrumbs {
+        font-size: 0.8125rem;
+      }
+
+      .topbar-actions {
+        gap: 0.5rem;
+      }
+
+      .topbar-icon-btn {
+        padding: 0.375rem;
+      }
+
+      .summary-cards {
+        grid-template-columns: 1fr;
+      }
+
+      .chart-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .content-wrapper {
+        padding: 1rem;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .topbar-right {
+        gap: 0.5rem;
+      }
+
+      .breadcrumb-item:not(.breadcrumb-current) {
+        display: none;
+      }
+
+      .breadcrumb-separator:last-of-type {
+        display: none;
+      }
     }
   </style>
 </head>
+
 <body>
-  <header>
-    <h1>Word Count Analyzer</h1>
-    <nav>
-      <a href="#" class="active-tab" id="analyzer-tab">Analyzer</a>
-      <a href="#" id="history-tab">History</a>
-    </nav>
-  </header>
-
-  <main>
-    <div class="panel left">
-      <div id="analyzer-panel">
-        <div class="drop-zone" id="drop-zone">
-          <p id="drop-instruction">Drop your file here or click to upload (TXT, DOCX, PDF)</p>
-          <input type="file" id="file-input" accept=".txt,.docx,.pdf" style="display: none;">
+  <div class="app-container">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">📊 Word Intelligence</div>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-section">
+          <div class="nav-section-title">Main</div>
+          <a class="nav-item active" data-view="dashboard">
+            <span class="nav-icon">📈</span>
+            <span>Dashboard</span>
+          </a>
+          <a id="dash" class="nav-item" data-view="visualizations">
+            <span class="nav-icon">📊</span>
+            <span>Visualizations</span>
+          </a>
+          <a class="nav-item" data-view="pyspark">
+            <span class="nav-icon">⚡</span>
+            <span>PySpark Execution</span>
+          </a>
+          <a class="nav-item" data-view="rawdata">
+            <span class="nav-icon">📋</span>
+            <span>Raw Word List</span>
+          </a>
+          <a class="nav-item" data-view="history">
+            <span class="nav-icon">📜</span>
+            <span>History & Records</span>
+          </a>
+          <a class="nav-item" data-view="sparkui">
+            <span class="nav-icon">🧭</span>
+            <span>Spark UI</span>
+          </a>
         </div>
-        
-        <!-- URL analysis section -->
-        <div style="margin-top: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 5px; background: #f9f9f9;">
-          <h3>Analyze Content from URL</h3>
-          <div style="display: flex; gap: 10px; margin-top: 10px;">
-            <input type="url" id="url-input" placeholder="https://example.com/article.txt" style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
-            <button id="analyze-url-btn" class="button">Analyze URL</button>
+      </nav>
+    </aside>
+
+    <!-- Sidebar Overlay for Mobile -->
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+    <!-- Main Content Area -->
+    <div class="main-content">
+      <!-- Top Action Bar -->
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="menu-toggle" id="menu-toggle" aria-label="Toggle menu">
+            ☰
+          </button>
+          <nav class="breadcrumbs" id="breadcrumbs">
+            <a href="#" class="breadcrumb-item">Home</a>
+            <span class="breadcrumb-separator">/</span>
+            <span class="breadcrumb-current" id="breadcrumb-current">Dashboard</span>
+          </nav>
+        </div>
+        <div class="topbar-right">
+          <div class="topbar-actions">
+            <button class="topbar-icon-btn" title="Notifications">
+              🔔
+              <span class="notification-badge">3</span>
+            </button>
+            <button class="topbar-icon-btn" title="Search">
+              🔍
+            </button>
+            <button class="topbar-icon-btn" title="Settings">
+              ⚙️
+            </button>
           </div>
-        </div>
-
-        <div id="file-actions" style="margin-top:12px; display:flex; align-items:center; gap:10px;">
-          <span id="selected-filename" style="color:var(--muted);">No file selected</span>
-          <button id="analyze-btn" class="button" style="display:none;">Analyze</button>
-        </div>
-        
-        <div class="options">
-          <div class="stopwords">
-            <label>Stopwords (comma-separated):</label>
-            <div class="stopwords-input-group">
-              <input type="text" id="stopwords" placeholder="the, and, or, ...">
-              <button id="apply-stopwords" class="button">Apply</button>
+          <div class="user-profile">
+            <div class="user-avatar">A</div>
+            <div class="user-info">
+              <div class="user-name">Admin User</div>
+              <div class="user-role">Administrator</div>
             </div>
           </div>
-          
-          <!-- Search bar for particular words -->
-          <div class="search-section" style="margin-top: 1.5rem;">
-            <label>Search for specific words:</label>
-            <div class="search-input-group" style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
-              <input type="text" id="word-search" placeholder="Enter a word to search...">
-              <button id="search-word-btn" class="button">Search</button>
+        </div>
+      </header>
+
+      <!-- Content Wrapper -->
+      <div class="content-wrapper">
+        <div class="tabs-container">
+          <!-- DASHBOARD: File & URL Actions -->
+          <div class="tab-content active" id="tab-dashboard">
+
+            <div style="margin-bottom: 1rem;">
+              <h2 style="font-size: 1.75rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">
+                📊 Analysis Dashboard
+              </h2>
+              <p style="color: var(--text-secondary); font-size: 0.9375rem;">
+                Real-time insights into your text data and word frequency analysis
+              </p>
             </div>
-            <div id="search-results" style="margin-top: 1rem; padding: 1rem; background: #f8f9fa; border-radius: 5px; display: none;">
-              <h4>Search Results:</h4>
-              <p id="search-result-text"></p>
+
+            <!-- Upload Dataset Section -->
+            <div
+              style="background: var(--bg-card); border: 1px solid var(--border-light); border-radius: 12px; padding: 2rem; margin-bottom: 1.5rem; box-shadow: var(--shadow-sm);">
+              <h3
+                style="font-size: 1.25rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                <span style="font-size: 1.5rem;">📤</span>
+                Upload Document
+              </h3>
+              <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 1.5rem;">
+                Upload your file containing text content to automatically analyze word frequency.
+              </p>
+
+              <div id="dashboard-drop-zone"
+                style="border: 2px dashed var(--border-medium); border-radius: 12px; padding: 4rem 2rem; text-align: center; cursor: pointer; transition: all 0.2s ease; background: var(--bg-main);">
+                <div style="font-size: 4rem; margin-bottom: 1rem; color: var(--primary-blue);">📄</div>
+                <div style="font-size: 1.125rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.5rem;">
+                  Drag & Drop your file here
+                </div>
+                <div style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 1.5rem;">
+                  or
+                </div>
+                <button id="dashboard-browse-btn"
+                  style="background: var(--primary-blue); color: white; border: none; padding: 0.875rem 2rem; border-radius: 8px; font-size: 0.9375rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem; box-shadow: var(--shadow-md); transition: all 0.2s ease;">
+                  <span>📁</span>
+                  <span>Browse Files</span>
+                </button>
+                <input type="file" id="dashboard-file-input" accept=".txt,.docx,.pdf,.csv,.html,.htm"
+                  style="display: none;">
+                <div style="margin-top: 1rem; font-size: 0.8125rem; color: var(--text-muted);">
+                  Supported: TXT, DOCX, PDF, CSV, HTML
+                </div>
+              </div>
+
+              <div id="dashboard-file-selected" class="hidden"
+                style="margin-top: 1rem; padding: 1rem; background: #EFF6FF; border: 1px solid var(--primary-blue); border-radius: 8px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 1rem;">
+                  <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    <span style="font-size: 1.5rem;">✅</span>
+                    <div>
+                      <div style="font-weight: 600; color: var(--text-primary);">Selected: <span
+                          id="dashboard-filename"></span></div>
+                      <div style="font-size: 0.8125rem; color: var(--text-secondary); margin-top: 0.25rem;">Ready to
+                        analyze</div>
+                    </div>
+                  </div>
+                  <button id="dashboard-analyze-btn" href="dash"
+                    style="background: var(--success-green); color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 8px; font-size: 0.9375rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem; box-shadow: var(--shadow-md); transition: all 0.2s ease;">
+                    <span>🔍</span>
+                    <span>Analyze File</span>
+                  </button>
+                </div>
+              </div>
+
+              <button id="dashboard-clear-btn" class="hidden"
+                style="margin-top: 1rem; background: var(--danger-red); color: white; border: none; padding: 0.625rem 1.25rem; border-radius: 8px; font-size: 0.875rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem;">
+                <span>🗑️</span>
+                <span>Clear Selection</span>
+              </button>
+            </div>
+
+            <!-- URL Analysis Section -->
+            <div
+              style="background: var(--bg-card); border: 1px solid var(--border-light); border-radius: 12px; padding: 2rem; box-shadow: var(--shadow-sm);">
+              <h3
+                style="font-size: 1.25rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                <span style="font-size: 1.5rem;">🌐</span>
+                Analyze URL
+              </h3>
+              <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 1.5rem;">
+                Enter a website URL to fetch and analyze its text content.
+              </p>
+
+              <div style="display: flex; gap: 1rem; align-items: flex-start;">
+                <div style="flex: 1;">
+                  <input type="url" id="dashboard-url-input" placeholder="https://example.com/article"
+                    style="width: 100%; padding: 0.875rem 1rem; border: 1px solid var(--border-medium); border-radius: 8px; font-size: 0.9375rem; transition: all 0.2s ease;">
+                </div>
+                <button id="dashboard-url-analyze-btn"
+                  style="background: var(--secondary-blue); color: white; border: none; padding: 0.875rem 1.75rem; border-radius: 8px; font-size: 0.9375rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem; box-shadow: var(--shadow-md); white-space: nowrap;">
+                  <span>🔍</span>
+                  <span>Analyze URL</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Optional Stopwords Section -->
+            <div style="margin-top: 1.5rem; padding: 1rem; background: var(--bg-main); border-radius: 8px;">
+              <label
+                style="display: block; font-size: 0.875rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.5rem;">
+                ⚙️ Stopwords (Optional)
+              </label>
+              <input type="text" id="dashboard-stopwords" placeholder="the, and, or, is, at..."
+                style="width: 100%; padding: 0.75rem 1rem; border: 1px solid var(--border-medium); border-radius: 8px; font-size: 0.875rem;">
+              <div style="margin-top: 0.5rem; font-size: 0.75rem; color: var(--text-muted);">
+                Enter comma-separated words to exclude from analysis
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB 1: Visualizations -->
+          <div class="tab-content" id="tab-visualizations">
+            <!-- Summary Cards -->
+            <div class="summary-cards">
+              <div class="summary-card">
+                <div class="summary-card-icon">📝</div>
+                <div class="summary-card-label">Total Words</div>
+                <div class="card-value-wrapper">
+                  <div class="chart-loading"><div class="chart-loading-spinner"></div></div>
+                  <div class="summary-card-value" id="stat-total-words">0</div>
+                  <div class="summary-card-meta">Analyzed</div>
+                </div>
+              </div>
+              <div class="summary-card">
+                <div class="summary-card-icon">✨</div>
+                <div class="summary-card-label">Unique Words</div>
+                <div class="card-value-wrapper">
+                  <div class="chart-loading"><div class="chart-loading-spinner"></div></div>
+                  <div class="summary-card-value" id="stat-unique-words">0</div>
+                  <div class="summary-card-meta">Distinct terms</div>
+                </div>
+              </div>
+              <div class="summary-card">
+                <div class="summary-card-icon">😊</div>
+                <div class="summary-card-label">Sentiment Score</div>
+                <div class="card-value-wrapper">
+                  <div class="chart-loading"><div class="chart-loading-spinner"></div></div>
+                  <div class="summary-card-value" id="stat-sentiment">N/A</div>
+                  <div class="summary-card-meta" id="stat-sentiment-label">Not analyzed</div>
+                </div>
+              </div>
+              <div class="summary-card">
+                <div class="summary-card-icon">⏱️</div>
+                <div class="summary-card-label">Processing Time</div>
+                <div class="card-value-wrapper">
+                  <div class="chart-loading"><div class="chart-loading-spinner"></div></div>
+                  <div class="summary-card-value" id="stat-time">0ms</div>
+                  <div class="summary-card-meta">Execution</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Clean Word Analysis -->
+            <div class="chart-section">
+              <h3 class="chart-section-title">Word Frequency Analysis (Top 15)</h3>
+              <div class="chart-container" id="word-frequency-container">
+                <div class="chart-loading"><div class="chart-loading-spinner"></div><div class="chart-loading-text">Loading chart...</div></div>
+                <div class="chart-empty-state">
+                  <div class="chart-empty-icon">📊</div>
+                  <div class="chart-empty-title">No Data Yet</div>
+                  <div class="chart-empty-text">Upload a file from the Dashboard to see word frequency analysis</div>
+                </div>
+                <canvas id="word-frequency-chart"></canvas>
+              </div>
+            </div>
+
+            <!-- Deep NLP Insights Grid -->
+            <div class="chart-grid">
+              <div class="chart-section">
+                <h3 class="chart-section-title">Bigram Frequency</h3>
+                <div class="chart-container" id="bigram-container">
+                  <div class="chart-loading"><div class="chart-loading-spinner"></div><div class="chart-loading-text">Loading chart...</div></div>
+                  <div class="chart-empty-state">
+                    <div class="chart-empty-icon">📈</div>
+                    <div class="chart-empty-title">No Data Yet</div>
+                    <div class="chart-empty-text">Upload a file to see bigram analysis</div>
+                  </div>
+                  <canvas id="bigram-chart"></canvas>
+                </div>
+              </div>
+              <div class="chart-section">
+                <h3 class="chart-section-title">Trigram Frequency</h3>
+                <div class="chart-container" id="trigram-container">
+                  <div class="chart-loading"><div class="chart-loading-spinner"></div><div class="chart-loading-text">Loading chart...</div></div>
+                  <div class="chart-empty-state">
+                    <div class="chart-empty-icon">📉</div>
+                    <div class="chart-empty-title">No Data Yet</div>
+                    <div class="chart-empty-text">Upload a file to see trigram analysis</div>
+                  </div>
+                  <canvas id="trigram-chart"></canvas>
+                </div>
+              </div>
+            </div>
+
+            <div class="chart-grid">
+              <div class="chart-section">
+                <h3 class="chart-section-title">Emotion Breakdown</h3>
+                <div class="chart-container" id="emotion-container">
+                  <div class="chart-loading"><div class="chart-loading-spinner"></div><div class="chart-loading-text">Loading chart...</div></div>
+                  <div class="chart-empty-state">
+                    <div class="chart-empty-icon">😊</div>
+                    <div class="chart-empty-title">No Data Yet</div>
+                    <div class="chart-empty-text">Upload a file to see emotion analysis</div>
+                  </div>
+                  <canvas id="emotion-chart"></canvas>
+                </div>
+              </div>
+              <div class="chart-section">
+                <h3 class="chart-section-title">TF-IDF Topic Clusters</h3>
+                <div class="chart-container" id="tfidf-container">
+                  <div class="chart-loading"><div class="chart-loading-spinner"></div><div class="chart-loading-text">Loading chart...</div></div>
+                  <div class="chart-empty-state">
+                    <div class="chart-empty-icon">🎯</div>
+                    <div class="chart-empty-title">No Data Yet</div>
+                    <div class="chart-empty-text">Upload a file to see topic clusters</div>
+                  </div>
+                  <canvas id="tfidf-chart"></canvas>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB 2: PySpark Execution -->
+          <div class="tab-content" id="tab-pyspark">
+            <div class="spark-panel">
+              <div class="spark-header">
+                <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--text-primary);">Spark Job Execution</h3>
+                <span class="spark-status idle" id="spark-status">Idle</span>
+              </div>
+
+              <div class="spark-progress-bar">
+                <div class="spark-progress-fill" id="spark-progress"></div>
+              </div>
+
+              <div class="spark-metrics-grid">
+                <div class="spark-metric">
+                  <div class="spark-metric-label">Jobs</div>
+                  <div class="spark-metric-value" id="spark-jobs">0</div>
+                </div>
+                <div class="spark-metric">
+                  <div class="spark-metric-label">Stages</div>
+                  <div class="spark-metric-value" id="spark-stages">0</div>
+                </div>
+                <div class="spark-metric">
+                  <div class="spark-metric-label">Tasks</div>
+                  <div class="spark-metric-value" id="spark-tasks">0/0</div>
+                </div>
+                <div class="spark-metric">
+                  <div class="spark-metric-label">Executor Memory</div>
+                  <div class="spark-metric-value" id="spark-memory">-</div>
+                </div>
+                <div class="spark-metric">
+                  <div class="spark-metric-label">Shuffle Read</div>
+                  <div class="spark-metric-value" id="spark-shuffle-read">-</div>
+                </div>
+                <div class="spark-metric">
+                  <div class="spark-metric-label">Shuffle Write</div>
+                  <div class="spark-metric-value" id="spark-shuffle-write">-</div>
+                </div>
+                <div class="spark-metric">
+                  <div class="spark-metric-label">Avg Task Time</div>
+                  <div class="spark-metric-value" id="spark-task-time">-</div>
+                </div>
+                <div class="spark-metric">
+                  <div class="spark-metric-label">Skew Detection</div>
+                  <div class="spark-metric-value" id="spark-skew">-</div>
+                </div>
+              </div>
+
+              <h4 style="font-size: 1rem; font-weight: 600; margin: 1.5rem 0 1rem; color: var(--text-secondary);">
+                Pipeline DAG</h4>
+              <div class="spark-dag">
+                <div class="dag-node">Read Data</div>
+                <div class="dag-arrow">→</div>
+                <div class="dag-node">Tokenize</div>
+                <div class="dag-arrow">→</div>
+                <div class="dag-node">Filter Stopwords</div>
+                <div class="dag-arrow">→</div>
+                <div class="dag-node">Count Words</div>
+                <div class="dag-arrow">→</div>
+                <div class="dag-node">Top-K Selection</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB 3: Raw Data -->
+          <div class="tab-content" id="tab-rawdata">
+            <div class="table-controls">
+              <div class="search-box">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="table-search" placeholder="Search words...">
+              </div>
+              <button class="btn-secondary" id="export-csv-btn">
+                <span>📥</span>
+                <span>Export CSV</span>
+              </button>
+            </div>
+
+            <div class="table-container">
+              <table class="data-table" id="raw-data-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Word</th>
+                    <th>Frequency</th>
+                    <th>Normalized (%)</th>
+                    <th>Length</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td colspan="5" style="text-align: center; padding: 3rem; color: var(--text-muted);">
+                      No data available. Upload a file or analyze a URL to see results.
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="pagination">
+              <button class="pagination-btn" id="prev-page" disabled>Previous</button>
+              <span class="pagination-info">Page <span id="current-page">1</span> of <span
+                  id="total-pages">1</span></span>
+              <button class="pagination-btn" id="next-page" disabled>Next</button>
+            </div>
+          </div>
+
+          <!-- TAB 4: History & Records -->
+          <div class="tab-content" id="tab-history">
+            <!-- History Header Section -->
+            <div class="history-header">
+              <div>
+                <h2 class="history-title">History & Records</h2>
+                <p class="history-subtitle">View your previously processed analyses, files, and saved visual insights.
+                </p>
+              </div>
+              <button class="btn-secondary" id="refresh-history-btn">
+                <span>🔄</span>
+                <span>Refresh</span>
+              </button>
+            </div>
+
+            <!-- Search + Filter Bar -->
+            <div class="history-filters">
+              <div class="search-box" style="flex: 1; max-width: 400px;">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="history-search" placeholder="Search by filename, date, or job type...">
+              </div>
+
+              <div class="filter-chips">
+                <button class="filter-chip active" data-filter="all">
+                  <span>All Records</span>
+                </button>
+                <button class="filter-chip" data-filter="file">
+                  <span>📁 File Uploads</span>
+                </button>
+                <button class="filter-chip" data-filter="url">
+                  <span>🌐 URL Analyses</span>
+                </button>
+                <button class="filter-chip" data-filter="pyspark">
+                  <span>⚡ PySpark Jobs</span>
+                </button>
+              </div>
+
+              <select class="history-date-filter" id="history-date-range">
+                <option value="all">All Time</option>
+                <option value="today">Today</option>
+                <option value="week">This Week</option>
+                <option value="month">This Month</option>
+              </select>
+            </div>
+
+            <!-- History Table -->
+            <div class="history-table-container">
+              <table class="history-table" id="history-table">
+                <thead>
+                  <tr>
+                    <th style="width: 40px;">#</th>
+                    <th style="width: 60px;">Type</th>
+                    <th>File / Job Name</th>
+                    <th style="width: 140px;">Date Processed</th>
+                    <th style="width: 100px;">Total Words</th>
+                    <th style="width: 120px;">Unique Words</th>
+                    <th style="width: 100px;">Status</th>
+                    <th style="width: 120px;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="history-table-body">
+                  <tr>
+                    <td colspan="8" style="text-align: center; padding: 3rem; color: var(--text-muted);">
+                      <div style="font-size: 2rem; margin-bottom: 1rem;">📂</div>
+                      <div style="font-weight: 600; margin-bottom: 0.5rem;">No History Records</div>
+                      <div>Upload a file or analyze a URL to create your first record.</div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- History Pagination -->
+            <div class="pagination">
+              <button class="pagination-btn" id="history-prev-page" disabled>Previous</button>
+              <span class="pagination-info">Page <span id="history-current-page">1</span> of <span
+                  id="history-total-pages">1</span></span>
+              <button class="pagination-btn" id="history-next-page" disabled>Next</button>
+            </div>
+          </div>
+
+          <!-- TAB 5: Spark UI -->
+          <div class="tab-content" id="tab-sparkui">
+            <div class="spark-ui-header">
+              <div>
+                <h2 class="spark-ui-title">Spark Execution UI</h2>
+                <p class="spark-ui-subtitle">Monitor PySpark jobs, DAG stages, tasks, and cluster performance.</p>
+              </div>
+              <div class="spark-controls">
+                <button class="btn-primary" id="spark-start-btn"><span>🚀</span><span>Start Spark
+                    Session</span></button>
+                <button class="btn-secondary" id="spark-stop-btn"><span>🛑</span><span>Stop Spark
+                    Session</span></button>
+                <button class="btn-secondary" id="spark-refresh-btn"><span>🔄</span><span>Refresh UI</span></button>
+                <button class="btn-secondary" id="spark-open-btn" disabled><span>🔗</span><span>Open Spark UI</span></button>
+              </div>
+            </div>
+
+            <div class="spark-kpi-grid">
+              <div class="spark-kpi-card">
+                <div class="spark-kpi-label">Active Spark Session</div>
+                <div class="spark-kpi-value" id="spark-active">No</div>
+              </div>
+              <div class="spark-kpi-card">
+                <div class="spark-kpi-label">Running Jobs</div>
+                <div class="spark-kpi-value" id="spark-running-jobs">0</div>
+              </div>
+              <div class="spark-kpi-card">
+                <div class="spark-kpi-label">Completed Jobs</div>
+                <div class="spark-kpi-value" id="spark-completed-jobs">0</div>
+              </div>
+              <div class="spark-kpi-card">
+                <div class="spark-kpi-label">Executor Memory Usage</div>
+                <div class="spark-kpi-value" id="spark-executor-mem">N/A</div>
+              </div>
+              <div class="spark-kpi-card">
+                <div class="spark-kpi-label">Last Job Runtime</div>
+                <div class="spark-kpi-value" id="spark-last-runtime">—</div>
+              </div>
+            </div>
+
+            <div id="spark-error-box" class="spark-error-box hidden"></div>
+
+            <div class="spark-iframe-wrapper">
+              <iframe id="spark-ui-frame" class="spark-iframe hidden" title="Embedded Spark UI"></iframe>
+              <div id="spark-ui-fallback" class="spark-fallback">
+                <div style="font-size:2rem;">⚠️</div>
+                <p style="margin-top:0.75rem;font-weight:600;">Spark UI is unavailable.</p>
+                <p style="font-size:0.85rem;color:var(--text-muted);">Start a Spark session to view execution details.</p>
+                <p id="spark-open-fallback" style="margin-top:0.5rem; display:none;">
+                  <a id="spark-open-link" href="#" target="_blank" rel="noopener noreferrer">Open Spark UI in a new tab</a>
+                </p>
+              </div>
             </div>
           </div>
         </div>
-
-        <div id="results" style="display: none;">
-          <h2>Analysis Results</h2>
-          <div class="chart-container">
-            <canvas id="word-chart"></canvas>
-          </div>
-          <div class="stats">
-            <p>Total Words: <span id="total-words">0</span></p>
-            <p>Unique Words: <span id="unique-words">0</span></p>
-            <a id="download-csv" class="button" style="display:inline-block; text-decoration:none; grid-column: 1 / -1; text-align: center;">Download CSV</a>
-          </div>
-        </div>
-      </div>
-
-      <div id="history-panel" style="display: none;">
-        <h2>Analysis History</h2>
-        <div id="history-list"></div>
-      </div>
-    </div>
-
-    <div class="panel right">
-      <h3>Instructions</h3>
-      <ol>
-        <li>Upload a text file (TXT, DOCX, PDF) by dropping it or clicking the upload area</li>
-        <li>Or analyze content directly from a URL</li>
-        <li>Optionally add stopwords to exclude common words</li>
-        <li>View the analysis results and charts</li>
-        <li>Download the detailed CSV report (for file uploads only)</li>
-      </ol>
-      <div class="tips">
-        <h4>Tips:</h4>
-        <ul>
-          <li>Larger files may take longer to process</li>
-          <li>Use stopwords to filter out common words</li>
-          <li>Check the history tab for past analyses</li>
-          <li>Supported formats: TXT, DOCX, PDF</li>
-          <li>You can also analyze content from URLs</li>
-        </ul>
-      </div>
-    </div>
-  </main>
-
-  <!-- Modal for showing data -->
-  <div id="dataModal" class="modal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h3>Word Frequency Data</h3>
-        <span class="close-modal">&times;</span>
-      </div>
-      <div class="modal-body">
-        <table id="wordDataTable">
-          <thead>
-            <tr>
-              <th>Word</th>
-              <th>Frequency</th>
-            </tr>
-          </thead>
-          <tbody>
-          </tbody>
-        </table>
       </div>
     </div>
   </div>
 
-  <footer>
-    <p>&copy; 2025 Word Count Analyzer</p>
-  </footer>
+  <!-- History Detail Modal -->
+  <div id="history-detail-modal" class="modal">
+    <div class="modal-content" style="max-width: 900px;">
+      <div class="modal-header">
+        <h3 class="modal-title">📊 Record Details</h3>
+        <span class="close-modal" data-modal="history-detail-modal">&times;</span>
+      </div>
+      <div class="modal-body">
+        <!-- Record Summary -->
+        <div class="history-detail-summary">
+          <div class="history-detail-field">
+            <span class="history-detail-label">File Name:</span>
+            <span class="history-detail-value" id="detail-filename">-</span>
+          </div>
+          <div class="history-detail-field">
+            <span class="history-detail-label">Type:</span>
+            <span class="history-detail-value" id="detail-type">-</span>
+          </div>
+          <div class="history-detail-field">
+            <span class="history-detail-label">Date Processed:</span>
+            <span class="history-detail-value" id="detail-date">-</span>
+          </div>
+          <div class="history-detail-field">
+            <span class="history-detail-label">Total Words:</span>
+            <span class="history-detail-value" id="detail-total-words">-</span>
+          </div>
+          <div class="history-detail-field">
+            <span class="history-detail-label">Unique Words:</span>
+            <span class="history-detail-value" id="detail-unique-words">-</span>
+          </div>
+          <div class="history-detail-field">
+            <span class="history-detail-label">Processing Time:</span>
+            <span class="history-detail-value" id="detail-processing-time">-</span>
+          </div>
+        </div>
+
+        <!-- Top Words Preview -->
+        <div class="history-detail-section">
+          <h4 class="history-detail-section-title">Top 15 Words</h4>
+          <div class="history-detail-words" id="detail-top-words">
+            <span class="word-badge">Loading...</span>
+          </div>
+        </div>
+
+        <!-- Stopwords Removed -->
+        <div class="history-detail-section">
+          <h4 class="history-detail-section-title">Stopwords Removed</h4>
+          <div class="history-detail-stopwords" id="detail-stopwords">
+            <span style="color: var(--text-muted);">None specified</span>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="history-detail-actions">
+          <button class="btn-primary" id="detail-rerun-btn">
+            <span>🔄</span>
+            <span>Re-run Analysis</span>
+          </button>
+          <button class="btn-secondary" id="detail-export-json-btn">
+            <span>📥</span>
+            <span>Export JSON</span>
+          </button>
+          <button class="btn-secondary" id="detail-download-csv-btn">
+            <span>📊</span>
+            <span>Download CSV</span>
+          </button>
+          <button class="btn-danger" id="detail-delete-btn">
+            <span>🗑️</span>
+            <span>Delete Record</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Upload File Modal -->
+  <div id="upload-modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">Upload File for Analysis</h3>
+        <span class="close-modal" data-modal="upload-modal">&times;</span>
+      </div>
+      <div class="modal-body">
+        <div class="drop-zone" id="drop-zone">
+          <p class="drop-zone-text">📂 Drag & drop your file here</p>
+          <p class="drop-zone-hint">or click to browse</p>
+          <input type="file" id="file-input" accept=".txt,.docx,.pdf,.csv,.html,.htm" style="display: none;">
+        </div>
+        <div id="selected-file-info" class="hidden"
+          style="margin-top: 1rem; padding: 1rem; background: var(--bg-main); border-radius: 8px;">
+          <p style="font-weight: 600; margin-bottom: 0.5rem;">Selected: <span id="selected-filename"></span></p>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Stopwords (comma-separated, optional)</label>
+          <input type="text" class="form-input" id="stopwords-input" placeholder="the, and, or, is, at...">
+        </div>
+        <button class="btn-primary" id="analyze-file-btn" style="width: 100%;" disabled>
+          <span>🔍</span>
+          <span>Analyze File</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Analyze URL Modal -->
+  <div id="url-modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">Analyze URL Content</h3>
+        <span class="close-modal" data-modal="url-modal">&times;</span>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Website URL</label>
+          <input type="url" class="form-input" id="url-input" placeholder="https://example.com/article.html">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Stopwords (comma-separated, optional)</label>
+          <input type="text" class="form-input" id="url-stopwords-input" placeholder="the, and, or, is, at...">
+        </div>
+        <button class="btn-primary" id="analyze-url-submit-btn" style="width: 100%;">
+          <span>🔍</span>
+          <span>Analyze URL</span>
+        </button>
+      </div>
+    </div>
+  </div>
 
   <script>
-    // Global variables
-    let currentChart = null;
-    let lastAnalysisData = null;
+    // ========== Global State ==========
+    let currentAnalysisData = null;
+    let currentCharts = {};
+    let selectedFile = null;
+    let sparkSimulationTimer = null;
+    const ROWS_PER_PAGE = 50;
+    let currentPage = 1;
+    let rawDataCache = [];
 
-    // Modal handling functions
-    const modal = document.getElementById('dataModal');
-    const closeBtn = document.querySelector('.close-modal');
-    
-    function showModal() {
-      modal.classList.add('show');
-      document.body.style.overflow = 'hidden';
-    }
-    
-    function hideModal() {
-      modal.classList.remove('show');
-      document.body.style.overflow = '';
-    }
-    
-    function showWordData(data) {
-      const tableBody = document.querySelector('#wordDataTable tbody');
-      tableBody.innerHTML = '';
-      
-      // Create rows for each word and its frequency
-      data.top_words.forEach((word, index) => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-          <td>${word}</td>
-          <td>${data.top_counts[index].toLocaleString()}</td>
-        `;
-        tableBody.appendChild(row);
+    // History-related state
+    let historyRecords = [];
+    let filteredHistoryRecords = [];
+    let currentHistoryPage = 1;
+    const HISTORY_ROWS_PER_PAGE = 10;
+    let currentHistoryFilter = 'all';
+    let currentDateFilter = 'all';
+    let selectedHistoryRecord = null;
+
+    // ========== Dashboard Controls ==========
+    function initializeDashboard() {
+      const dropZone = document.getElementById('dashboard-drop-zone');
+      const browseBtn = document.getElementById('dashboard-browse-btn');
+      const fileInput = document.getElementById('dashboard-file-input');
+      const fileSelected = document.getElementById('dashboard-file-selected');
+      const filenameSpan = document.getElementById('dashboard-filename');
+      const analyzeBtn = document.getElementById('dashboard-analyze-btn');
+      const clearBtn = document.getElementById('dashboard-clear-btn');
+      const urlInput = document.getElementById('dashboard-url-input');
+      const urlAnalyzeBtn = document.getElementById('dashboard-url-analyze-btn');
+      const stopwordsInput = document.getElementById('dashboard-stopwords');
+
+      let dashboardSelectedFile = null;
+
+      // Browse button click
+      browseBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        fileInput.click();
       });
-      
-      // Update modal title with filename
-      const modalTitle = document.querySelector('.modal-header h3');
-      modalTitle.textContent = `Word Frequency Data - ${data.filename}`;
-      
-      showModal();
-    }
-    
-    // Close modal when clicking close button or outside
-    closeBtn.addEventListener('click', hideModal);
-    modal.addEventListener('click', (e) => {
-      if (e.target === modal) hideModal();
-    });
-    
-    // Close modal with Escape key
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && modal.classList.contains('show')) {
-        hideModal();
+
+      // Drop zone click
+      dropZone.addEventListener('click', () => {
+        fileInput.click();
+      });
+
+      // Drag and drop
+      dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.style.background = '#EFF6FF';
+        dropZone.style.borderColor = 'var(--primary-blue)';
+      });
+
+      dropZone.addEventListener('dragleave', () => {
+        dropZone.style.background = 'var(--bg-main)';
+        dropZone.style.borderColor = 'var(--border-medium)';
+      });
+
+      dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.style.background = 'var(--bg-main)';
+        dropZone.style.borderColor = 'var(--border-medium)';
+
+        if (e.dataTransfer.files.length) {
+          handleDashboardFileSelect(e.dataTransfer.files[0]);
+        }
+      });
+
+      // File input change
+      fileInput.addEventListener('change', (e) => {
+        if (e.target.files.length) {
+          handleDashboardFileSelect(e.target.files[0]);
+        }
+      });
+
+      // Handle file selection
+      function handleDashboardFileSelect(file) {
+        const allowedExts = ['.txt', '.docx', '.pdf', '.csv', '.html', '.htm'];
+        const ext = '.' + file.name.split('.').pop().toLowerCase();
+
+        if (!allowedExts.includes(ext)) {
+          alert('Please upload TXT, DOCX, PDF, CSV, or HTML files only.');
+          return;
+        }
+
+        dashboardSelectedFile = file;
+        filenameSpan.textContent = file.name;
+        fileSelected.classList.remove('hidden');
+        clearBtn.classList.remove('hidden');
       }
+
+      // Analyze button
+      analyzeBtn.addEventListener('click', () => {
+        if (!dashboardSelectedFile) return;
+
+        const stopwords = stopwordsInput.value;
+        analyzeDashboardFile(dashboardSelectedFile, stopwords);
+      });
+
+      // Clear button
+      clearBtn.addEventListener('click', () => {
+        dashboardSelectedFile = null;
+        fileInput.value = '';
+        fileSelected.classList.add('hidden');
+        clearBtn.classList.add('hidden');
+      });
+
+      // URL analyze button
+      urlAnalyzeBtn.addEventListener('click', () => {
+        const url = urlInput.value.trim();
+        if (!url) {
+          alert('Please enter a URL.');
+          return;
+        }
+
+        try {
+          new URL(url);
+        } catch {
+          alert('Please enter a valid URL.');
+          return;
+        }
+
+        const stopwords = stopwordsInput.value;
+        analyzeDashboardURL(url, stopwords);
+      });
+
+      // URL input enter key
+      urlInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          urlAnalyzeBtn.click();
+        }
+      });
+    }
+
+    function analyzeDashboardFile(file, stopwords) {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('stopwords', stopwords);
+
+      const startTime = Date.now();
+      showGraphLoading();
+      startSparkSimulation();
+
+      fetch('/analyze', {
+        method: 'POST',
+        body: formData
+      })
+        .then(response => {
+          if (!response.ok) throw new Error('Analysis failed');
+          return response.json();
+        })
+        .then(data => {
+          if (data.error) throw new Error(data.error);
+          const processingTime = Date.now() - startTime;
+          handleAnalysisSuccess(data, processingTime);
+          // Switch to Visualizations tab
+          switchToView('visualizations');
+          // Clear dashboard selection
+          document.getElementById('dashboard-file-input').value = '';
+          document.getElementById('dashboard-file-selected').classList.add('hidden');
+          document.getElementById('dashboard-clear-btn').classList.add('hidden');
+        })
+        .catch(error => {
+          handleAnalysisError(error);
+        });
+    }
+
+    function analyzeDashboardURL(url, stopwords) {
+      const formData = new FormData();
+      formData.append('url', url);
+      formData.append('stopwords', stopwords);
+
+      const startTime = Date.now();
+      showGraphLoading();
+      startSparkSimulation();
+
+      fetch('/analyze_url', {
+        method: 'POST',
+        body: formData
+      })
+        .then(response => {
+          if (!response.ok) throw new Error('URL analysis failed');
+          return response.json();
+        })
+        .then(data => {
+          if (data.error) throw new Error(data.error);
+          const processingTime = Date.now() - startTime;
+          handleAnalysisSuccess(data, processingTime);
+          // Switch to Visualizations tab
+          switchToView('visualizations');
+          // Clear URL input
+          document.getElementById('dashboard-url-input').value = '';
+        })
+        .catch(error => {
+          handleAnalysisError(error);
+        });
+    }
+
+    // ========== Initialization ==========
+    document.addEventListener('DOMContentLoaded', () => {
+      initializeMobileMenu();
+      initializeNavigation();
+      initializeTabSwitching();
+      initializeModals();
+      initializeFileUpload();
+      initializeURLAnalysis();
+      initializeTableControls();
+      initializeHistoryTab();
+      loadHistoryData();
+      initializeSparkUITab();
+      updateSparkStatus();
+      // Set initial active tab to dashboard
+      document.querySelector('[data-tab="dashboard"]')?.classList.add('active');
+      // Initialize dashboard controls
+      initializeDashboard();
     });
 
-    document.addEventListener('DOMContentLoaded', () => {
-      // File upload handling
+    // ========== Navigation ==========
+    function switchToView(viewName) {
+      console.log('Switching to view:', viewName);
+      
+      // Update sidebar navigation
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      const navItem = document.querySelector(`.nav-item[data-view="${viewName}"]`);
+      if (navItem) {
+        navItem.classList.add('active');
+        console.log('Nav item updated:', navItem);
+      } else {
+        console.error('Nav item not found for view:', viewName);
+      }
+
+      // Update tab content
+      document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+      const target = document.getElementById(`tab-${viewName}`);
+      if (target) {
+        target.classList.add('active');
+        console.log('Tab content activated:', target.id);
+      } else {
+        console.error('Tab content not found for view:', viewName);
+      }
+
+      // Update breadcrumb
+      updateBreadcrumb(viewName);
+
+      // If switching to Spark UI, refresh status to populate iframe/buttons
+      if (viewName === 'sparkui') {
+        updateSparkStatus();
+      }
+
+      // Close mobile menu if open
+      closeMobileMenu();
+    }
+
+    function updateBreadcrumb(viewName) {
+      const breadcrumbMap = {
+        'dashboard': 'Dashboard',
+        'visualizations': 'Visualizations',
+        'pyspark': 'PySpark Execution',
+        'rawdata': 'Raw Word List',
+        'history': 'History & Records',
+        'sparkui': 'Spark UI'
+      };
+
+      const breadcrumbCurrent = document.getElementById('breadcrumb-current');
+      if (breadcrumbCurrent && breadcrumbMap[viewName]) {
+        breadcrumbCurrent.textContent = breadcrumbMap[viewName];
+      }
+    }
+
+    function initializeMobileMenu() {
+      const menuToggle = document.getElementById('menu-toggle');
+      const sidebar = document.querySelector('.sidebar');
+      const overlay = document.getElementById('sidebar-overlay');
+
+      menuToggle?.addEventListener('click', () => {
+        sidebar.classList.toggle('mobile-open');
+        overlay.classList.toggle('active');
+      });
+
+      overlay?.addEventListener('click', () => {
+        closeMobileMenu();
+      });
+    }
+
+    function closeMobileMenu() {
+      const sidebar = document.querySelector('.sidebar');
+      const overlay = document.getElementById('sidebar-overlay');
+      sidebar?.classList.remove('mobile-open');
+      overlay?.classList.remove('active');
+    }
+
+    function initializeNavigation() {
+      document.querySelectorAll('.nav-item').forEach(item => {
+        item.addEventListener('click', (e) => {
+          e.preventDefault();
+          document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+          item.classList.add('active');
+
+          const view = item.dataset.view;
+          if (view) {
+            // Switch to corresponding tab
+            const tabBtn = document.querySelector(`[data-tab="${view}"]`);
+            if (tabBtn) {
+              tabBtn.click();
+            } else {
+              // Directly activate tab content when no tab button exists (e.g., Spark UI)
+              document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+              document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+              const target = document.getElementById(`tab-${view}`);
+              if (target) target.classList.add('active');
+            }
+
+            // Update breadcrumb
+            updateBreadcrumb(view);
+
+            // Close mobile menu
+            closeMobileMenu();
+          }
+        });
+      });
+    }
+
+    // ========== Tab Switching ==========
+    function initializeTabSwitching() {
+      document.querySelectorAll('.tab-button').forEach(button => {
+        button.addEventListener('click', () => {
+          const targetTab = button.dataset.tab;
+
+          // Update button states
+          document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+          button.classList.add('active');
+
+          // Update content visibility
+          document.querySelectorAll('.tab-content').forEach(content => {
+            content.classList.remove('active');
+          });
+          document.getElementById(`tab-${targetTab}`).classList.add('active');
+        });
+      });
+    }
+
+    // ========== Modal Management ==========
+    function initializeModals() {
+      // Open modals via Dashboard buttons
+      document.getElementById('upload-file-btn')?.addEventListener('click', () => {
+        document.getElementById('upload-modal').classList.add('show');
+      });
+
+      document.getElementById('analyze-url-btn')?.addEventListener('click', () => {
+        document.getElementById('url-modal').classList.add('show');
+      });
+
+      // Close modals
+      document.querySelectorAll('.close-modal').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const modalId = btn.dataset.modal;
+          if (modalId) {
+            const modal = document.getElementById(modalId);
+            modal.classList.remove('show');
+            modal.classList.remove('active');
+          }
+        });
+      });
+
+      // Close on background click
+      document.querySelectorAll('.modal').forEach(modal => {
+        modal.addEventListener('click', (e) => {
+          if (e.target === modal) {
+            modal.classList.remove('show');
+          }
+        });
+      });
+
+      // Close on Escape key
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          document.querySelectorAll('.modal.show').forEach(m => m.classList.remove('show'));
+        }
+      });
+    }
+
+    // ========== File Upload ==========
+    function initializeFileUpload() {
       const dropZone = document.getElementById('drop-zone');
       const fileInput = document.getElementById('file-input');
-      const resultsDiv = document.getElementById('results');
-      const downloadBtn = document.getElementById('download-csv');
-      const historyList = document.getElementById('history-list');
+      const analyzeBtn = document.getElementById('analyze-file-btn');
 
-      // Tab switching
-      const analyzerTab = document.getElementById('analyzer-tab');
-      const historyTab = document.getElementById('history-tab');
-      const analyzerPanel = document.getElementById('analyzer-panel');
-      const historyPanel = document.getElementById('history-panel');
+      // Click to browse
+      dropZone.addEventListener('click', () => fileInput.click());
 
-      analyzerTab.addEventListener('click', (e) => {
-        e.preventDefault();
-        analyzerTab.classList.add('active-tab');
-        historyTab.classList.remove('active-tab');
-        analyzerPanel.style.display = 'block';
-        historyPanel.style.display = 'none';
-      });
-
-      historyTab.addEventListener('click', (e) => {
-        e.preventDefault();
-        historyTab.classList.add('active-tab');
-        analyzerTab.classList.remove('active-tab');
-        historyPanel.style.display = 'block';
-        analyzerPanel.style.display = 'none';
-        loadHistory();
-      });
-
-      // File drop handling
+      // Drag & drop
       dropZone.addEventListener('dragover', (e) => {
         e.preventDefault();
         dropZone.classList.add('dragover');
@@ -510,449 +2550,1075 @@
       dropZone.addEventListener('drop', (e) => {
         e.preventDefault();
         dropZone.classList.remove('dragover');
-        const file = e.dataTransfer.files[0];
-        if (file) selectFile(file);
-      });
-
-      dropZone.addEventListener('click', () => {
-        fileInput.click();
+        if (e.dataTransfer.files.length) {
+          handleFileSelect(e.dataTransfer.files[0]);
+        }
       });
 
       fileInput.addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (file) selectFile(file);
-      });
-
-      // Selected file kept until user clicks Analyze
-      let selectedFile = null;
-
-      function selectFile(file) {
-        if (!file) return;
-        
-        // Check file extension
-        const allowedExtensions = ['.txt', '.docx', '.pdf'];
-        const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
-        if (!allowedExtensions.includes(fileExtension)) {
-          alert('Please upload a text (.txt), Word (.docx), or PDF (.pdf) file.');
-          return;
-        }
-
-        selectedFile = file;
-
-        // Show filename and reveal Analyze button
-        document.getElementById('selected-filename').textContent = file.name;
-        const analyzeBtn = document.getElementById('analyze-btn');
-        analyzeBtn.style.display = 'inline-block';
-
-        // Clear previous chart/results
-        if (currentChart) {
-          currentChart.destroy();
-          currentChart = null;
-        }
-        resultsDiv.style.display = 'none';
-      }
-
-      // Analyze button click handler
-      document.getElementById('analyze-btn').addEventListener('click', analyzeFile);
-
-      // Handle stopwords changes
-      const stopwordsInput = document.getElementById('stopwords');
-      const applyStopwordsBtn = document.getElementById('apply-stopwords');
-      
-      function handleStopwordsUpdate(e) {
-        e.preventDefault();
-        if (lastAnalysisData) {
-          updateAnalysisWithStopwords();
-        } else {
-          alert('Please analyze a file first before applying stopwords.');
-        }
-      }
-      
-      stopwordsInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-          handleStopwordsUpdate(e);
+        if (e.target.files.length) {
+          handleFileSelect(e.target.files[0]);
         }
       });
-      
-      applyStopwordsBtn.addEventListener('click', handleStopwordsUpdate);
 
-      // Handle word search functionality
-      const wordSearchInput = document.getElementById('word-search');
-      const searchWordBtn = document.getElementById('search-word-btn');
-      const searchResultsDiv = document.getElementById('search-results');
-      const searchResultText = document.getElementById('search-result-text');
-      
-      function searchForWord() {
-        const searchTerm = wordSearchInput.value.trim().toLowerCase();
-        if (!searchTerm) {
-          alert('Please enter a word to search for.');
-          return;
-        }
-        
-        if (!lastAnalysisData) {
-          alert('Please analyze a file first.');
-          return;
-        }
-        
-        // Search in all words
-        const allWords = lastAnalysisData.all_words || [];
-        const allCounts = lastAnalysisData.all_counts || [];
-        
-        // Find the word and its count
-        let found = false;
-        let count = 0;
-        
-        for (let i = 0; i < allWords.length; i++) {
-          if (allWords[i].toLowerCase() === searchTerm) {
-            found = true;
-            count = allCounts[i];
-            break;
-          }
-        }
-        
-        // Display results
-        searchResultsDiv.style.display = 'block';
-        if (found) {
-          searchResultText.innerHTML = `The word <strong>"${searchTerm}"</strong> appears <strong>${count}</strong> time(s) in the document.`;
-        } else {
-          searchResultText.innerHTML = `The word <strong>"${searchTerm}"</strong> was not found in the document.`;
-        }
-      }
-      
-      wordSearchInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-          searchForWord();
+      analyzeBtn.addEventListener('click', () => {
+        if (selectedFile) {
+          analyzeFile(selectedFile, document.getElementById('stopwords-input').value);
         }
       });
-      
-      searchWordBtn.addEventListener('click', searchForWord);
+    }
 
-      function analyzeFile() {
-        if (!selectedFile) {
-          alert('No file selected. Please select a .txt file first.');
-          return;
-        }
+    function handleFileSelect(file) {
+      const allowedExts = ['.txt', '.docx', '.pdf', '.csv', '.html', '.htm'];
+      const ext = '.' + file.name.split('.').pop().toLowerCase();
 
-        const formData = new FormData();
-        formData.append('file', selectedFile);
-        formData.append('stopwords', document.getElementById('stopwords').value);
+      if (!allowedExts.includes(ext)) {
+        alert('Please upload TXT, DOCX, PDF, CSV, or HTML files only.');
+        return;
+      }
 
-        // Show loading state
-        document.getElementById('drop-instruction').innerHTML = 'Analyzing file...';
-        document.getElementById('analyze-btn').disabled = true;
-        console.log('Sending /analyze request...');
+      selectedFile = file;
+      document.getElementById('selected-filename').textContent = file.name;
+      document.getElementById('selected-file-info').classList.remove('hidden');
+      document.getElementById('analyze-file-btn').disabled = false;
+    }
 
-        fetch('/analyze', {
-          method: 'POST',
-          body: formData
-        })
+    function analyzeFile(file, stopwords) {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('stopwords', stopwords);
+
+      const startTime = Date.now();
+      showGraphLoading();
+      startSparkSimulation();
+
+      fetch('/analyze', {
+        method: 'POST',
+        body: formData
+      })
         .then(response => {
-          if (!response.ok) {
-            return response.text().then(text => {
-              throw new Error(`HTTP ${response.status}: ${text}`);
-            });
-          }
+          if (!response.ok) throw new Error('Analysis failed');
           return response.json();
         })
         .then(data => {
           if (data.error) throw new Error(data.error);
-
-          // Store the analysis data for stopword updates
-          lastAnalysisData = data;
-
-          // Reset drop zone instruction
-          document.getElementById('drop-instruction').innerHTML = 'Drop your file here or click to upload (TXT, DOCX, PDF)';
-          document.getElementById('analyze-btn').disabled = false;
-
-          // Update statistics
-          document.getElementById('total-words').textContent = (data.total_words || 0).toLocaleString();
-          document.getElementById('unique-words').textContent = (data.unique_words || 0).toLocaleString();
-
-          // Update chart and download link
-          updateChart({ top_words: data.top_words, top_counts: data.top_counts, filename: data.filename });
-          if (data.csv_download) {
-            downloadBtn.href = data.csv_download;
-            downloadBtn.style.display = 'inline-block';
-          } else {
-            downloadBtn.style.display = 'none';
-          }
-
-          resultsDiv.style.display = 'block';
-
-          // Clear selected file so user can edit and re-upload if desired
-          selectedFile = null;
-          document.getElementById('selected-filename').textContent = 'No file selected';
-          document.getElementById('analyze-btn').style.display = 'none';
-          
-          // Clear previous search results
-          searchResultsDiv.style.display = 'none';
+          const processingTime = Date.now() - startTime;
+          handleAnalysisSuccess(data, processingTime);
+          // Close modal properly
+          const modal = document.getElementById('upload-modal');
+          modal.classList.remove('show');
+          modal.classList.remove('active');
+          // Switch to Visualizations tab to show results
+          switchToView('visualizations');
         })
         .catch(error => {
-          console.error('Analysis error:', error);
-          document.getElementById('drop-instruction').innerHTML = 'Drop your file here or click to upload (TXT, DOCX, PDF)';
-          document.getElementById('analyze-btn').disabled = false;
-          alert(error.message || 'An error occurred during analysis. Please try again.');
+          handleAnalysisError(error);
         });
-      }
+    }
 
-      function updateChart(data) {
-        const ctx = document.getElementById('word-chart').getContext('2d');
-        
-        // Destroy existing chart if it exists
-        if (currentChart) {
-          currentChart.destroy();
-        }
-        
-        // Create new chart
-        currentChart = new Chart(ctx, {
-          type: 'bar',
-          data: {
-            labels: data.top_words,
-            datasets: [{
-              label: 'Word Frequency',
-              data: data.top_counts,
-              backgroundColor: 'rgba(45, 170, 255, 0.5)',
-              borderColor: 'rgba(45, 170, 255, 1)',
-              borderWidth: 1
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-              legend: {
-                display: true,
-                position: 'top'
-              },
-              title: {
-                display: true,
-                text: data.filename ? `Word Frequency Analysis - ${data.filename}` : 'Word Frequency Analysis',
-                font: {
-                  size: 16
-                }
-              }
-            },
-            scales: {
-              y: {
-                beginAtZero: true,
-                title: {
-                  display: true,
-                  text: 'Frequency',
-                  font: {
-                    size: 14
-                  }
-                }
-              },
-              x: {
-                title: {
-                  display: true,
-                  text: 'Words',
-                  font: {
-                    size: 14
-                  }
-                },
-                ticks: {
-                  maxRotation: 45,
-                  minRotation: 45,
-                  autoSkip: false
-                }
-              }
-            }
-          }
-        });
-      }
-
-      function loadHistory() {
-        historyList.innerHTML = '<p>Loading...</p>';
-        fetch('/list_history')
-          .then(response => response.json())
-          .then(history => {
-            if (history.length === 0) {
-              historyList.innerHTML = '<p>No analysis history found</p>';
-              return;
-            }
-
-            const items = history.map(item => `
-              <div class="history-item">
-                <div class="history-header">
-                  <h4>${item.filename}</h4>
-                  <span class="history-date">${new Date(item.stored_at).toLocaleString()}</span>
-                </div>
-                <div class="history-stats">
-                  <div class="stat-item">
-                    <span class="stat-label">Total Words:</span>
-                    <span class="stat-value">${item.total_words.toLocaleString()}</span>
-                  </div>
-                  <div class="stat-item">
-                    <span class="stat-label">Unique Words:</span>
-                    <span class="stat-value">${item.unique_words.toLocaleString()}</span>
-                  </div>
-                </div>
-                <div class="history-actions">
-                  <button onclick="showWordData(${JSON.stringify(item).replace(/"/g, '&quot;')})" class="button">
-                    Show Data
-                  </button>
-                  <button onclick="showHistoryDetail(${item.id})" class="button">
-                    View Analysis
-                  </button>
-                </div>
-              </div>
-            `).join('');
-
-            historyList.innerHTML = items;
-          })
-          .catch(error => {
-            console.error('Error:', error);
-            historyList.innerHTML = '<p>Error loading history</p>';
-          });
-      }
-
-      function updateAnalysisWithStopwords() {
-        if (!lastAnalysisData) return;
-
-        const stopwords = document.getElementById('stopwords').value;
-        const formData = new FormData();
-        formData.append('filename', lastAnalysisData.filename);
-        formData.append('stopwords', stopwords);
-
-        fetch('/api/update_analysis', {
-          method: 'POST',
-          body: formData
-        })
-        .then(response => {
-          if (!response.ok) {
-            return response.text().then(text => { throw new Error(`HTTP ${response.status}: ${text}`); });
-          }
-          return response.json();
-        })
-        .then(data => {
-          if (data.error) throw new Error(data.error);
-
-          // Update statistics
-          document.getElementById('total-words').textContent = (data.total_words || 0).toLocaleString();
-          document.getElementById('unique-words').textContent = (data.unique_words || 0).toLocaleString();
-
-          // Update chart
-          updateChart({
-            top_words: data.top_words,
-            top_counts: data.top_counts,
-            filename: data.filename
-          });
-
-          // Store the new analysis data
-          lastAnalysisData = data;
-        })
-        .catch(error => {
-          console.error('Analysis update error:', error);
-          alert(error.message || 'An error occurred while updating the analysis. Please try again.');
-        });
-      }
-
-      window.showHistoryDetail = function(id) {
-        fetch(`/history_detail/${id}`)
-          .then(response => response.json())
-          .then(data => {
-            if (data.error) {
-              alert(data.error);
-              return;
-            }
-            // Switch to analyzer tab and show results
-            analyzerTab.click();
-            
-            // Update chart and stats
-            updateChart({
-              top_words: data.top_words,
-              top_counts: data.top_counts,
-              filename: data.filename
-            });
-            
-            // Update statistics
-            document.getElementById('total-words').textContent = data.total_words || 0;
-            document.getElementById('unique-words').textContent = data.unique_words || 0;
-            
-            // Update download link
-            const base = data.filename.replace(/\.[^/.]+$/, '');
-            const csvName = `${base}_analysis.csv`;
-            downloadBtn.href = `/download/${csvName}`;
-            downloadBtn.style.display = 'inline-block';
-            
-            resultsDiv.style.display = 'block';
-          })
-          .catch(error => {
-            console.error('Error:', error);
-            alert('Error loading history detail');
-          });
-      };
-      
-      // URL analysis functionality
-      document.getElementById('analyze-url-btn').addEventListener('click', analyzeUrl);
-      
-      function analyzeUrl() {
+    // ========== URL Analysis ==========
+    function initializeURLAnalysis() {
+      document.getElementById('analyze-url-submit-btn').addEventListener('click', () => {
         const url = document.getElementById('url-input').value.trim();
+        const stopwords = document.getElementById('url-stopwords-input').value;
+
         if (!url) {
-          alert('Please enter a URL to analyze.');
+          alert('Please enter a URL.');
           return;
         }
-        
-        // Validate URL format
+
         try {
           new URL(url);
-        } catch (e) {
+        } catch {
           alert('Please enter a valid URL.');
           return;
         }
-        
-        const stopwords = document.getElementById('stopwords').value;
-        
-        const formData = new FormData();
-        formData.append('url', url);
-        formData.append('stopwords', stopwords);
-        
-        // Show loading state
-        document.getElementById('drop-instruction').innerHTML = 'Analyzing URL content...';
-        document.getElementById('analyze-url-btn').disabled = true;
-        
-        fetch('/analyze_url', {
-          method: 'POST',
-          body: formData
-        })
+
+        analyzeURL(url, stopwords);
+      });
+    }
+
+    function analyzeURL(url, stopwords) {
+      const formData = new FormData();
+      formData.append('url', url);
+      formData.append('stopwords', stopwords);
+
+      const startTime = Date.now();
+      showGraphLoading();
+      startSparkSimulation();
+
+      fetch('/analyze_url', {
+        method: 'POST',
+        body: formData
+      })
         .then(response => {
-          if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+          if (!response.ok) throw new Error('URL analysis failed');
           return response.json();
         })
         .then(data => {
           if (data.error) throw new Error(data.error);
-          
-          // Store the analysis data for stopword updates
-          lastAnalysisData = data;
-          
-          // Reset UI
-          document.getElementById('drop-instruction').innerHTML = 'Drop your file here or click to upload (TXT, DOCX, PDF)';
-          document.getElementById('analyze-url-btn').disabled = false;
-          
-          // Update statistics
-          document.getElementById('total-words').textContent = (data.total_words || 0).toLocaleString();
-          document.getElementById('unique-words').textContent = (data.unique_words || 0).toLocaleString();
-          
-          // Update chart and download link
-          updateChart({ top_words: data.top_words, top_counts: data.top_counts, filename: data.filename });
-          
-          // Hide download link for URL analysis (no CSV download)
-          downloadBtn.style.display = 'none';
-          
-          resultsDiv.style.display = 'block';
-          
-          // Clear previous search results
-          document.getElementById('search-results').style.display = 'none';
+          const processingTime = Date.now() - startTime;
+          handleAnalysisSuccess(data, processingTime);
+          // Close modal properly
+          const modal = document.getElementById('url-modal');
+          modal.classList.remove('show');
+          modal.classList.remove('active');
+          // Switch to Visualizations tab to show results
+          switchToView('visualizations');
         })
         .catch(error => {
-          console.error('URL analysis error:', error);
-          document.getElementById('drop-instruction').innerHTML = 'Drop your file here or click to upload (TXT, DOCX, PDF)';
-          document.getElementById('analyze-url-btn').disabled = false;
-          alert(error.message || 'An error occurred during URL analysis. Please try again.');
+          handleAnalysisError(error);
         });
+    }
+
+    // ========== Analysis Success Handler ==========
+    function handleAnalysisSuccess(data, processingTime) {
+      currentAnalysisData = data;
+      hideGraphLoading();
+      completeSparkSimulation();
+
+      // Update summary cards
+      document.getElementById('stat-total-words').textContent = (data.total_words || 0).toLocaleString();
+      document.getElementById('stat-unique-words').textContent = (data.unique_words || 0).toLocaleString();
+      document.getElementById('stat-time').textContent = processingTime + 'ms';
+
+      // Update sentiment
+      updateSentimentCard(data);
+
+      // Render all charts
+      renderWordFrequencyChart(data);
+      renderBigramChart(data);
+      renderTrigramChart(data);
+      renderEmotionChart(data);
+      renderTFIDFChart(data);
+
+      // Update raw data table
+      updateRawDataTable(data);
+
+      // Switch to visualizations tab
+      switchToView('visualizations');
+    }
+
+    function handleAnalysisError(error) {
+      hideGraphLoading();
+      failSparkSimulation();
+      alert(error.message || 'An error occurred during analysis');
+      console.error(error);
+    }
+
+    // ========== Sentiment Analysis ==========
+    function updateSentimentCard(data) {
+      const POS = ['good', 'great', 'excellent', 'positive', 'benefit', 'success', 'happy', 'improve', 'love', 'win', 'strong', 'growth', 'best', 'amazing', 'wonderful'];
+      const NEG = ['bad', 'poor', 'terrible', 'negative', 'risk', 'fail', 'sad', 'decline', 'hate', 'loss', 'weak', 'debt', 'worst', 'awful', 'horrible'];
+
+      const words = (data.all_words || []).map(w => (w || '').toLowerCase());
+      let posCount = 0, negCount = 0;
+
+      words.forEach(w => {
+        if (POS.includes(w)) posCount++;
+        if (NEG.includes(w)) negCount++;
+      });
+
+      const total = posCount + negCount || 1;
+      const score = (posCount - negCount + total) / (2 * total);
+      const percentage = Math.round(score * 100);
+
+      let sentiment = 'Neutral';
+      if (percentage > 66) sentiment = 'Positive';
+      else if (percentage < 33) sentiment = 'Negative';
+
+      document.getElementById('stat-sentiment').textContent = percentage + '%';
+      document.getElementById('stat-sentiment-label').textContent = sentiment;
+    }
+
+    // ========== Chart Rendering ==========
+    function renderWordFrequencyChart(data) {
+      destroyChart('word-frequency-chart');
+
+      const container = document.getElementById('word-frequency-container');
+      if (container) container.classList.add('has-data');
+
+      const ctx = document.getElementById('word-frequency-chart').getContext('2d');
+      const colors = generateColorGradient(data.top_words.length, '#0C66E4', '#1D7AFC');
+
+      currentCharts['word-frequency-chart'] = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: data.top_words,
+          datasets: [{
+            label: 'Frequency',
+            data: data.top_counts,
+            backgroundColor: colors,
+            borderColor: colors.map(c => c.replace('0.7', '1')),
+            borderWidth: 2,
+            borderRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: 'rgba(15, 23, 42, 0.9)',
+              padding: 12,
+              borderColor: '#E2E8F0',
+              borderWidth: 1
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              grid: { color: '#F1F5F9' },
+              ticks: { color: '#64748B' }
+            },
+            x: {
+              grid: { display: false },
+              ticks: { color: '#64748B', maxRotation: 45, minRotation: 45 }
+            }
+          }
+        }
+      });
+    }
+
+    function renderBigramChart(data) {
+      destroyChart('bigram-chart');
+      const bigrams = generateBigrams(data.top_words).slice(0, 10);
+
+      const container = document.getElementById('bigram-container');
+      if (container) container.classList.add('has-data');
+
+      const ctx = document.getElementById('bigram-chart').getContext('2d');
+      currentCharts['bigram-chart'] = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: bigrams.map(b => b.pair),
+          datasets: [{
+            label: 'Frequency',
+            data: bigrams.map(b => b.count),
+            backgroundColor: 'rgba(34, 197, 94, 0.7)',
+            borderColor: '#22C55E',
+            borderWidth: 2,
+            borderRadius: 6
+          }]
+        },
+        options: chartOptions()
+      });
+    }
+
+    function renderTrigramChart(data) {
+      destroyChart('trigram-chart');
+      const trigrams = generateTrigrams(data.top_words).slice(0, 10);
+
+      const container = document.getElementById('trigram-container');
+      if (container) container.classList.add('has-data');
+
+      const ctx = document.getElementById('trigram-chart').getContext('2d');
+      currentCharts['trigram-chart'] = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: trigrams.map(t => t.pair),
+          datasets: [{
+            label: 'Frequency',
+            data: trigrams.map(t => t.count),
+            backgroundColor: 'rgba(245, 158, 11, 0.7)',
+            borderColor: '#F59E0B',
+            borderWidth: 2,
+            borderRadius: 6
+          }]
+        },
+        options: chartOptions()
+      });
+    }
+
+    function renderEmotionChart(data) {
+      destroyChart('emotion-chart');
+
+      const container = document.getElementById('emotion-container');
+      if (container) container.classList.add('has-data');
+
+      const emotions = analyzeEmotions(data.all_words || []);
+      const ctx = document.getElementById('emotion-chart').getContext('2d');
+
+      currentCharts['emotion-chart'] = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Joy', 'Anger', 'Fear', 'Sadness', 'Neutral'],
+          datasets: [{
+            data: [emotions.joy, emotions.anger, emotions.fear, emotions.sadness, emotions.neutral],
+            backgroundColor: ['#22C55E', '#EF4444', '#A855F7', '#3B82F6', '#94A3B8'],
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'bottom' }
+          }
+        }
+      });
+    }
+
+    function renderTFIDFChart(data) {
+      destroyChart('tfidf-chart');
+
+      const container = document.getElementById('tfidf-container');
+      if (container) container.classList.add('has-data');
+
+      const clusters = simulateTFIDFClusters(data.top_words || []);
+      const ctx = document.getElementById('tfidf-chart').getContext('2d');
+
+      currentCharts['tfidf-chart'] = new Chart(ctx, {
+        type: 'scatter',
+        data: {
+          datasets: clusters
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'bottom' }
+          },
+          scales: {
+            x: { title: { display: true, text: 'Component 1' }, grid: { color: '#F1F5F9' } },
+            y: { title: { display: true, text: 'Component 2' }, grid: { color: '#F1F5F9' } }
+          }
+        }
+      });
+    }
+
+    // ========== Helper: Generate N-grams ==========
+    function generateBigrams(words) {
+      const bigrams = {};
+      for (let i = 0; i < words.length - 1; i++) {
+        const pair = words[i] + ' ' + words[i + 1];
+        bigrams[pair] = (bigrams[pair] || 0) + 1;
       }
-    });
+      return Object.entries(bigrams)
+        .map(([pair, count]) => ({ pair, count }))
+        .sort((a, b) => b.count - a.count);
+    }
+
+    function generateTrigrams(words) {
+      const trigrams = {};
+      for (let i = 0; i < words.length - 2; i++) {
+        const pair = words[i] + ' ' + words[i + 1] + ' ' + words[i + 2];
+        trigrams[pair] = (trigrams[pair] || 0) + 1;
+      }
+      return Object.entries(trigrams)
+        .map(([pair, count]) => ({ pair, count }))
+        .sort((a, b) => b.count - a.count);
+    }
+
+    function analyzeEmotions(words) {
+      const joyWords = ['happy', 'joy', 'love', 'great', 'excellent', 'wonderful', 'amazing', 'fantastic'];
+      const angerWords = ['angry', 'hate', 'terrible', 'awful', 'furious', 'rage'];
+      const fearWords = ['fear', 'afraid', 'scary', 'worried', 'anxious', 'panic'];
+      const sadnessWords = ['sad', 'depressed', 'miserable', 'unhappy', 'sorrow'];
+
+      let joy = 0, anger = 0, fear = 0, sadness = 0, neutral = 0;
+
+      words.forEach(w => {
+        const word = (w || '').toLowerCase();
+        if (joyWords.includes(word)) joy++;
+        else if (angerWords.includes(word)) anger++;
+        else if (fearWords.includes(word)) fear++;
+        else if (sadnessWords.includes(word)) sadness++;
+        else neutral++;
+      });
+
+      return { joy, anger, fear, sadness, neutral };
+    }
+
+    function simulateTFIDFClusters(words) {
+      const colors = ['#0C66E4', '#22C55E', '#F59E0B', '#EF4444'];
+      const clusters = ['Cluster 1', 'Cluster 2', 'Cluster 3', 'Cluster 4'];
+
+      return clusters.map((label, i) => ({
+        label,
+        data: words.slice(i * 3, (i + 1) * 3).map(() => ({
+          x: Math.random() * 100,
+          y: Math.random() * 100
+        })),
+        backgroundColor: colors[i],
+        pointRadius: 8
+      }));
+    }
+
+    // ========== Raw Data Table ==========
+    function initializeTableControls() {
+      document.getElementById('table-search').addEventListener('input', (e) => {
+        filterRawDataTable(e.target.value);
+      });
+
+      document.getElementById('export-csv-btn').addEventListener('click', () => {
+        if (currentAnalysisData && currentAnalysisData.csv_download) {
+          window.location.href = currentAnalysisData.csv_download;
+        } else {
+          alert('No CSV available. Please analyze a file first.');
+        }
+      });
+
+      document.getElementById('prev-page').addEventListener('click', () => changePage(-1));
+      document.getElementById('next-page').addEventListener('click', () => changePage(1));
+    }
+
+    function updateRawDataTable(data) {
+      rawDataCache = (data.all_words || []).map((word, i) => ({
+        word,
+        frequency: data.all_counts[i] || 0,
+        normalized: ((data.all_counts[i] / data.total_words) * 100).toFixed(2),
+        length: word.length
+      }));
+
+      currentPage = 1;
+      renderTablePage();
+    }
+
+    function filterRawDataTable(query) {
+      const filtered = rawDataCache.filter(row =>
+        row.word.toLowerCase().includes(query.toLowerCase())
+      );
+      renderTableRows(filtered);
+    }
+
+    function renderTablePage() {
+      const start = (currentPage - 1) * ROWS_PER_PAGE;
+      const end = start + ROWS_PER_PAGE;
+      const pageData = rawDataCache.slice(start, end);
+
+      renderTableRows(pageData);
+      updatePagination();
+    }
+
+    function renderTableRows(rows) {
+      const tbody = document.querySelector('#raw-data-table tbody');
+
+      if (!rows.length) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:3rem; color: var(--text-muted);">No data available</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = rows.map((row, i) => `
+        <tr>
+          <td>${i + 1}</td>
+          <td><strong>${row.word}</strong></td>
+          <td>${row.frequency.toLocaleString()}</td>
+          <td>${row.normalized}%</td>
+          <td>${row.length}</td>
+        </tr>
+      `).join('');
+    }
+
+    function updatePagination() {
+      const totalPages = Math.ceil(rawDataCache.length / ROWS_PER_PAGE);
+      document.getElementById('current-page').textContent = currentPage;
+      document.getElementById('total-pages').textContent = totalPages;
+
+      document.getElementById('prev-page').disabled = currentPage === 1;
+      document.getElementById('next-page').disabled = currentPage === totalPages;
+    }
+
+    function changePage(delta) {
+      const totalPages = Math.ceil(rawDataCache.length / ROWS_PER_PAGE);
+      currentPage = Math.max(1, Math.min(currentPage + delta, totalPages));
+      renderTablePage();
+    }
+
+    // ========== PySpark Simulation ==========
+    function startSparkSimulation() {
+      document.getElementById('spark-status').className = 'spark-status running';
+      document.getElementById('spark-status').textContent = 'Running';
+      document.getElementById('spark-jobs').textContent = '1';
+      document.getElementById('spark-stages').textContent = '3';
+      document.getElementById('spark-memory').textContent = '512 MB';
+      document.getElementById('spark-shuffle-read').textContent = '1.2 MB';
+      document.getElementById('spark-shuffle-write').textContent = '800 KB';
+      document.getElementById('spark-task-time').textContent = '78 ms';
+      document.getElementById('spark-skew').textContent = 'Low';
+
+      let progress = 0;
+      sparkSimulationTimer = setInterval(() => {
+        progress = Math.min(95, progress + Math.random() * 15);
+        document.getElementById('spark-progress').style.width = progress + '%';
+        const tasks = Math.round((progress / 100) * 64);
+        document.getElementById('spark-tasks').textContent = `${tasks}/64`;
+      }, 200);
+    }
+
+    function completeSparkSimulation() {
+      if (sparkSimulationTimer) clearInterval(sparkSimulationTimer);
+      document.getElementById('spark-status').className = 'spark-status succeeded';
+      document.getElementById('spark-status').textContent = 'Succeeded';
+      document.getElementById('spark-progress').style.width = '100%';
+      document.getElementById('spark-tasks').textContent = '64/64';
+    }
+
+    function failSparkSimulation() {
+      if (sparkSimulationTimer) clearInterval(sparkSimulationTimer);
+      document.getElementById('spark-status').className = 'spark-status failed';
+      document.getElementById('spark-status').textContent = 'Failed';
+      document.getElementById('spark-progress').style.width = '0%';
+      document.getElementById('spark-tasks').textContent = '0/64';
+    }
+
+    // ========== Utility Functions ==========
+    function destroyChart(chartId) {
+      if (currentCharts[chartId]) {
+        currentCharts[chartId].destroy();
+        delete currentCharts[chartId];
+      }
+    }
+
+    // Individual chart loading overlay controls
+    function showGraphLoading() {
+      // Show loading on all charts and cards
+      document.querySelectorAll('.chart-loading').forEach(loading => {
+        loading.classList.add('active');
+      });
+    }
+
+    function hideGraphLoading() {
+      // Hide loading on all charts and cards
+      document.querySelectorAll('.chart-loading').forEach(loading => {
+        loading.classList.remove('active');
+      });
+    }
+
+    function chartOptions() {
+      return {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false }
+        },
+        scales: {
+          y: { beginAtZero: true, grid: { color: '#F1F5F9' }, ticks: { color: '#64748B' } },
+          x: { grid: { display: false }, ticks: { color: '#64748B', maxRotation: 45, minRotation: 45 } }
+        }
+      };
+    }
+
+    function generateColorGradient(count, startColor, endColor) {
+      const colors = [];
+      for (let i = 0; i < count; i++) {
+        colors.push(`rgba(12, 102, 228, ${0.7 - (i / count) * 0.3})`);
+      }
+      return colors;
+    }
+
+    function showLoadingState(message) {
+      // Could add a loading overlay here
+      console.log(message);
+    }
+
+    function hideLoadingState() {
+      console.log('Loading complete');
+    }
+
+    // ========== Spark UI Tab Functions ==========
+    function initializeSparkUITab() {
+      document.getElementById('spark-start-btn')?.addEventListener('click', startSparkSession);
+      document.getElementById('spark-stop-btn')?.addEventListener('click', stopSparkSession);
+      document.getElementById('spark-refresh-btn')?.addEventListener('click', updateSparkStatus);
+      document.getElementById('spark-open-btn')?.addEventListener('click', openSparkInNewTab);
+      updateSparkStatus();
+    }
+
+    async function startSparkSession() {
+      try {
+        const btn = document.getElementById('spark-start-btn');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="loading-spinner"></span><span>Starting...</span>';
+        const resp = await fetch('/api/spark/start', { method: 'POST' });
+        btn.disabled = false;
+        btn.innerHTML = '<span>🚀</span><span>Start Spark Session</span>';
+        if (!resp.ok) {
+          const data = await resp.json();
+          showSparkError(data.error || 'Failed to start Spark');
+        }
+        updateSparkStatus();
+      } catch (e) {
+        showSparkError('Spark start error');
+      }
+    }
+
+    async function stopSparkSession() {
+      try {
+        const btn = document.getElementById('spark-stop-btn');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="loading-spinner"></span><span>Stopping...</span>';
+        const resp = await fetch('/api/spark/stop', { method: 'POST' });
+        btn.disabled = false;
+        btn.innerHTML = '<span>🛑</span><span>Stop Spark Session</span>';
+        if (!resp.ok) {
+          const data = await resp.json();
+          showSparkError(data.error || 'Failed to stop Spark');
+        }
+        updateSparkStatus();
+      } catch (e) {
+        showSparkError('Spark stop error');
+      }
+    }
+
+    function sanitizeSparkURL(url) {
+      if (!url) return null;
+      try {
+        const parsed = new URL(url);
+        // Allow localhost/127.0.0.1 and current host, http or https
+        const allowedHosts = new Set(['localhost', '127.0.0.1', window.location.hostname]);
+        if (allowedHosts.has(parsed.hostname) && /^(http:|https:)$/.test(parsed.protocol)) {
+          return parsed.origin + parsed.pathname; // strip query params/fragments
+        }
+      } catch (_) {
+        return null;
+      }
+      return null;
+    }
+
+    function setSparkIframe(url) {
+      const frame = document.getElementById('spark-ui-frame');
+      const fallback = document.getElementById('spark-ui-fallback');
+      const openBtn = document.getElementById('spark-open-btn');
+      const openFallback = document.getElementById('spark-open-fallback');
+      const openLink = document.getElementById('spark-open-link');
+      if (!frame || !fallback) return;
+      if (url) {
+        frame.src = url;
+        frame.classList.remove('hidden');
+        fallback.classList.add('hidden');
+        if (openBtn) openBtn.disabled = false;
+        if (openFallback) openFallback.style.display = 'none';
+        if (openLink) openLink.href = url;
+      } else {
+        frame.src = '';
+        frame.classList.add('hidden');
+        fallback.classList.remove('hidden');
+        if (openBtn) openBtn.disabled = true;
+        if (openFallback) openFallback.style.display = 'none';
+      }
+    }
+
+    function showSparkError(msg) {
+      const errBox = document.getElementById('spark-error-box');
+      if (errBox) {
+        errBox.textContent = msg;
+        errBox.classList.remove('hidden');
+      }
+    }
+
+    async function updateSparkStatus() {
+      try {
+        const resp = await fetch('/api/spark/status?ts=' + Date.now(), { cache: 'no-store' });
+        if (!resp.ok) throw new Error('Status fetch failed');
+        const data = await resp.json();
+        // Update cards
+        setKPI('spark-active', data.active ? 'Yes' : 'No');
+        setKPI('spark-running-jobs', data.running_jobs);
+        setKPI('spark-completed-jobs', data.completed_jobs);
+        setKPI('spark-executor-mem', data.executor_memory || 'N/A');
+        setKPI('spark-last-runtime', data.last_job_runtime || '—');
+        const safeUrl = sanitizeSparkURL(data.spark_ui_url);
+        setSparkIframe(safeUrl);
+        // If active but cannot embed, show fallback open link
+        if (data.active && !safeUrl) {
+          const openFallback = document.getElementById('spark-open-fallback');
+          const openBtn = document.getElementById('spark-open-btn');
+          const openLink = document.getElementById('spark-open-link');
+          if (openFallback) openFallback.style.display = 'block';
+          if (openBtn) openBtn.disabled = false;
+          if (openLink && data.spark_ui_url) openLink.href = data.spark_ui_url;
+        }
+        if (!data.active) {
+          showSparkError('No active Spark session detected.');
+        } else {
+          const errBox = document.getElementById('spark-error-box');
+          if (errBox) errBox.classList.add('hidden');
+        }
+      } catch (e) {
+        showSparkError('Spark UI is unavailable. Start a session to view execution details.');
+        setSparkIframe(null);
+      }
+    }
+
+    function openSparkInNewTab() {
+      const frame = document.getElementById('spark-ui-frame');
+      const href = frame && frame.src ? frame.src : null;
+      if (href) {
+        window.open(href, '_blank', 'noopener');
+      } else {
+        // If iframe not set, try latest status
+        fetch('/api/spark/status?ts=' + Date.now(), { cache: 'no-store' })
+          .then(r => r.ok ? r.json() : Promise.reject())
+          .then(data => {
+            if (data && data.spark_ui_url) {
+              window.open(data.spark_ui_url, '_blank', 'noopener');
+            }
+          })
+          .catch(() => {});
+      }
+    }
+
+    function setKPI(id, value) {
+      const el = document.getElementById(id);
+      if (el) el.textContent = value;
+    }
+
+    // ========== History Tab Functions ==========
+    function initializeHistoryTab() {
+      // Refresh button
+      document.getElementById('refresh-history-btn')?.addEventListener('click', () => {
+        loadHistoryData();
+      });
+
+      // Search functionality
+      document.getElementById('history-search')?.addEventListener('input', (e) => {
+        filterHistoryRecords();
+      });
+
+      // Filter chips
+      document.querySelectorAll('.filter-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+          document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+          chip.classList.add('active');
+          currentHistoryFilter = chip.dataset.filter;
+          filterHistoryRecords();
+        });
+      });
+
+      // Date range filter
+      document.getElementById('history-date-range')?.addEventListener('change', (e) => {
+        currentDateFilter = e.target.value;
+        filterHistoryRecords();
+      });
+
+      // Pagination
+      document.getElementById('history-prev-page')?.addEventListener('click', () => {
+        if (currentHistoryPage > 1) {
+          currentHistoryPage--;
+          renderHistoryTable();
+        }
+      });
+
+      document.getElementById('history-next-page')?.addEventListener('click', () => {
+        const totalPages = Math.ceil(filteredHistoryRecords.length / HISTORY_ROWS_PER_PAGE);
+        if (currentHistoryPage < totalPages) {
+          currentHistoryPage++;
+          renderHistoryTable();
+        }
+      });
+
+      // Detail modal close buttons
+      document.querySelectorAll('[data-modal="history-detail-modal"]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.getElementById('history-detail-modal').classList.remove('active');
+        });
+      });
+
+      // Detail modal actions
+      document.getElementById('detail-rerun-btn')?.addEventListener('click', () => {
+        if (selectedHistoryRecord) {
+          rerunAnalysis(selectedHistoryRecord);
+        }
+      });
+
+      document.getElementById('detail-export-json-btn')?.addEventListener('click', () => {
+        if (selectedHistoryRecord) {
+          exportRecordAsJSON(selectedHistoryRecord);
+        }
+      });
+
+      document.getElementById('detail-download-csv-btn')?.addEventListener('click', () => {
+        if (selectedHistoryRecord) {
+          downloadRecordCSV(selectedHistoryRecord);
+        }
+      });
+
+      document.getElementById('detail-delete-btn')?.addEventListener('click', () => {
+        if (selectedHistoryRecord && confirm('Are you sure you want to delete this record?')) {
+          deleteHistoryRecord(selectedHistoryRecord.id);
+        }
+      });
+    }
+
+    async function loadHistoryData() {
+      try {
+        const response = await fetch('/api/history');
+        if (response.ok) {
+          historyRecords = await response.json();
+          filterHistoryRecords();
+        } else {
+          console.error('Failed to load history:', response.statusText);
+          historyRecords = [];
+          filteredHistoryRecords = [];
+          renderHistoryTable();
+        }
+      } catch (error) {
+        console.error('Error loading history:', error);
+        historyRecords = [];
+        filteredHistoryRecords = [];
+        renderHistoryTable();
+      }
+    }
+
+    function filterHistoryRecords() {
+      const searchQuery = document.getElementById('history-search')?.value.toLowerCase() || '';
+
+      filteredHistoryRecords = historyRecords.filter(record => {
+        // Filter by type
+        if (currentHistoryFilter !== 'all') {
+          const recordType = record.source || 'file';
+          if (currentHistoryFilter !== recordType) return false;
+        }
+
+        // Filter by date range
+        if (currentDateFilter !== 'all') {
+          const recordDate = new Date(record.stored_at);
+          const now = new Date();
+          const daysDiff = (now - recordDate) / (1000 * 60 * 60 * 24);
+
+          if (currentDateFilter === 'today' && daysDiff > 1) return false;
+          if (currentDateFilter === 'week' && daysDiff > 7) return false;
+          if (currentDateFilter === 'month' && daysDiff > 30) return false;
+        }
+
+        // Filter by search query
+        if (searchQuery) {
+          const filename = (record.filename || '').toLowerCase();
+          const date = formatDate(record.stored_at).toLowerCase();
+          const type = (record.source || 'file').toLowerCase();
+
+          if (!filename.includes(searchQuery) && !date.includes(searchQuery) && !type.includes(searchQuery)) {
+            return false;
+          }
+        }
+
+        return true;
+      });
+
+      currentHistoryPage = 1;
+      renderHistoryTable();
+    }
+
+    function renderHistoryTable() {
+      const tbody = document.getElementById('history-table-body');
+      if (!tbody) return;
+
+      if (filteredHistoryRecords.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="8" style="text-align: center; padding: 3rem; color: var(--text-muted);">
+              <div style="font-size: 2rem; margin-bottom: 1rem;">📂</div>
+              <div style="font-weight: 600; margin-bottom: 0.5rem;">No History Records Found</div>
+              <div>Try adjusting your filters or upload a file to create your first record.</div>
+            </td>
+          </tr>
+        `;
+        updateHistoryPagination();
+        return;
+      }
+
+      const startIdx = (currentHistoryPage - 1) * HISTORY_ROWS_PER_PAGE;
+      const endIdx = startIdx + HISTORY_ROWS_PER_PAGE;
+
+      const pageRecords = filteredHistoryRecords.slice(startIdx, endIdx);
+
+      tbody.innerHTML = pageRecords.map((record, idx) => {
+        const type = record.source || 'file';
+        const typeIcon = getTypeIcon(type);
+        const totalWords = record.total_words || 0;
+        const uniqueWords = record.unique_words || 0;
+        const status = record.status || 'completed';
+
+        return `
+          <tr onclick="showHistoryDetail(${record.id})">
+            <td>${startIdx + idx + 1}</td>
+            <td>
+              <div class="history-type-badge">${typeIcon}</div>
+            </td>
+            <td>
+              <div class="history-filename">${escapeHtml(record.filename || 'Unknown')}</div>
+            </td>
+            <td>${formatDate(record.stored_at)}</td>
+            <td>${totalWords.toLocaleString()}</td>
+            <td>${uniqueWords.toLocaleString()}</td>
+            <td>
+              <span class="history-status ${status}">${status === 'completed' ? '✓' : '✗'} ${capitalize(status)}</span>
+            </td>
+            <td>
+              <div class="history-actions" onclick="event.stopPropagation()">
+                <button class="history-action-btn" onclick="showHistoryDetail(${record.id})" title="View Details">
+                  👁️
+                </button>
+                <button class="history-action-btn" onclick="downloadRecordCSV(${record.id})" title="Download CSV">
+                  📥
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      updateHistoryPagination();
+    }
+
+    function updateHistoryPagination() {
+      const totalPages = Math.ceil(filteredHistoryRecords.length / HISTORY_ROWS_PER_PAGE);
+
+      document.getElementById('history-current-page').textContent = currentHistoryPage;
+      document.getElementById('history-total-pages').textContent = totalPages || 1;
+
+      const prevBtn = document.getElementById('history-prev-page');
+      const nextBtn = document.getElementById('history-next-page');
+
+      if (prevBtn) prevBtn.disabled = currentHistoryPage === 1;
+      if (nextBtn) nextBtn.disabled = currentHistoryPage >= totalPages || totalPages === 0;
+    }
+
+    // Make history functions globally accessible for onclick handlers
+    window.showHistoryDetail = function (recordId) {
+      const record = historyRecords.find(r => r.id === recordId);
+      if (!record) return;
+
+      selectedHistoryRecord = record;
+
+      // Populate modal
+      document.getElementById('detail-filename').textContent = record.filename || 'Unknown';
+      document.getElementById('detail-type').textContent = capitalize(record.source || 'file');
+      document.getElementById('detail-date').textContent = formatDate(record.stored_at);
+      document.getElementById('detail-total-words').textContent = (record.total_words || 0).toLocaleString();
+      document.getElementById('detail-unique-words').textContent = (record.unique_words || 0).toLocaleString();
+      document.getElementById('detail-processing-time').textContent = record.processing_time || 'N/A';
+
+      // Top words
+      const topWordsContainer = document.getElementById('detail-top-words');
+      if (record.top_words && record.top_words.length > 0) {
+        topWordsContainer.innerHTML = record.top_words.slice(0, 15).map(word =>
+          `<span class="word-badge">${escapeHtml(word)}</span>`
+        ).join('');
+      } else {
+        topWordsContainer.innerHTML = '<span style="color: var(--text-muted);">No data available</span>';
+      }
+
+      // Stopwords
+      const stopwordsContainer = document.getElementById('detail-stopwords');
+      if (record.stopwords && record.stopwords.length > 0) {
+        stopwordsContainer.textContent = record.stopwords.join(', ');
+      } else {
+        stopwordsContainer.innerHTML = '<span style="color: var(--text-muted);">None specified</span>';
+      }
+
+      // Show modal
+      const detailModal = document.getElementById('history-detail-modal');
+      detailModal.classList.add('show');
+    }
+
+    function getTypeIcon(type) {
+      const icons = {
+        'file': '📁',
+        'url': '🌐',
+        'pyspark': '⚡',
+        'visualization': '📊'
+      };
+      return icons[type] || '📄';
+    }
+
+    function formatDate(dateString) {
+      if (!dateString) return 'Unknown';
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return 'Invalid date';
+
+      const options = {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      };
+      return date.toLocaleDateString('en-US', options);
+    }
+
+    function capitalize(str) {
+      if (!str) return '';
+      return str.charAt(0).toUpperCase() + str.slice(1);
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    async function rerunAnalysis(record) {
+      alert('Re-run analysis feature: This would re-process the file with the same settings. Implementation requires backend support.');
+      document.getElementById('history-detail-modal').classList.remove('show');
+    }
+
+    function exportRecordAsJSON(record) {
+      const dataStr = JSON.stringify(record, null, 2);
+      const dataBlob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(dataBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${record.filename}_record.json`;
+      link.click();
+      URL.revokeObjectURL(url);
+    }
+
+    // Make downloadRecordCSV globally accessible
+    window.downloadRecordCSV = async function (recordIdOrRecord) {
+      let record;
+      if (typeof recordIdOrRecord === 'object') {
+        record = recordIdOrRecord;
+      } else {
+        record = historyRecords.find(r => r.id === recordIdOrRecord);
+      }
+
+      if (!record) return;
+
+      const filename = record.filename;
+      const csvFilename = filename.replace(/\.[^/.]+$/, '') + '_analysis.csv';
+
+      try {
+        const response = await fetch(`/download/${csvFilename}`);
+        if (response.ok) {
+          const blob = await response.blob();
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = csvFilename;
+          link.click();
+          URL.revokeObjectURL(url);
+        } else {
+          alert('CSV file not found. The analysis data may have been deleted.');
+        }
+      } catch (error) {
+        console.error('Error downloading CSV:', error);
+        alert('Failed to download CSV file.');
+      }
+    }
+
+    async function deleteHistoryRecord(recordId) {
+      try {
+        const response = await fetch(`/api/history/${recordId}`, {
+          method: 'DELETE'
+        });
+
+        if (response.ok) {
+          document.getElementById('history-detail-modal').classList.remove('show');
+          loadHistoryData(); // Reload history
+          alert('Record deleted successfully!');
+        } else {
+          alert('Failed to delete record. Please try again.');
+        }
+      } catch (error) {
+        console.error('Error deleting record:', error);
+        alert('Failed to delete record.');
+      }
+    }
+
   </script>
 </body>
+
 </html>

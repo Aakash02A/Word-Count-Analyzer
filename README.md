@@ -26,7 +26,7 @@ pip install -r requirements.txt
 ### Start the application
 
 ```
-python pyshark_analyzer.py
+python pyspark_analyzer.py
 python app.py
 ```
 Open your browser and navigate to http://localhost:5000

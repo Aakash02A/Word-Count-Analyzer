@@ -8,6 +8,7 @@ from collections import Counter
 import requests
 from docx import Document
 from PyPDF2 import PdfReader
+import pyspark_analyzer
 
 # Initialize global variables for PySpark components
 SparkSession = None
@@ -16,6 +17,9 @@ explode = None
 lower = None
 col = None
 SPARK_AVAILABLE = False
+spark_session = None
+last_spark_job_runtime = None
+recorded_spark_jobs = set()
 
 # Try to import PySpark
 try:
@@ -55,6 +59,27 @@ def extract_text_from_file(filepath, file_extension):
         for page in reader.pages:
             text += page.extract_text() + '\n'
         return text
+    elif file_extension == '.csv':
+        # Read CSV using pandas and flatten to a whitespace-separated string
+        try:
+            df = pd.read_csv(filepath, dtype=str, encoding='utf-8', engine='python')
+        except Exception:
+            # Fallback attempts
+            try:
+                df = pd.read_csv(filepath, dtype=str, encoding_errors='ignore', engine='python')
+            except Exception:
+                df = pd.read_csv(filepath, dtype=str)
+        df = df.fillna('')
+        return '\n'.join(' '.join(row) for row in df.astype(str).values)
+    elif file_extension == '.html' or file_extension == '.htm':
+        # Strip HTML tags to plain text
+        with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
+            raw = f.read()
+        # Remove script/style blocks and tags
+        raw = re.sub(r'<script[\s\S]*?</script>', ' ', raw, flags=re.IGNORECASE)
+        raw = re.sub(r'<style[\s\S]*?</style>', ' ', raw, flags=re.IGNORECASE)
+        text_only = re.sub(r'<[^>]+>', ' ', raw)
+        return re.sub(r'\s+', ' ', text_only)
     else:
         # Fallback for unknown file types
         with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
@@ -82,11 +107,62 @@ def spark_word_count(text, stopwords=set()):
     Word count implementation using PySpark.
     Falls back to simple implementation if PySpark is not available or fails.
     """
-    # For now, always use the simple implementation to avoid linter errors
-    # TODO: Re-enable PySpark when we can resolve the import issues
-    all_words = clean_text_all_words(text)
-    filtered_words = [w for w in all_words if w not in stopwords]
-    return all_words, filtered_words
+    if not SPARK_AVAILABLE:
+        all_words = clean_text_all_words(text)
+        filtered_words = [w for w in all_words if w not in stopwords]
+        return all_words, filtered_words
+    try:
+        global spark_session
+        if spark_session is None:
+            # If session not started by user, fall back to python implementation
+            all_words = clean_text_all_words(text)
+            filtered_words = [w for w in all_words if w not in stopwords]
+            return all_words, filtered_words
+            
+        # Use PySpark for word counting with DataFrame API
+        from pyspark.sql.functions import split, explode, lower, col
+        
+        # Create DataFrame with the text
+        text_df = spark_session.createDataFrame([(text,)], ["content"])
+        
+        # Preprocess text: convert to lowercase and split into words
+        words_df = text_df.select(
+            explode(
+                split(
+                    lower(col("content")), 
+                    "[^a-zA-Z]+"
+                )
+            ).alias("word")
+        ).filter(col("word") != "")
+        
+        # Filter out stopwords if provided
+        if stopwords:
+            # Convert stopwords to lowercase for case-insensitive comparison
+            stopwords_lower = [word.lower() for word in stopwords]
+            filtered_words_df = words_df.filter(~col("word").isin(stopwords_lower))
+        else:
+            filtered_words_df = words_df
+            
+        # Count word frequencies
+        word_counts_df = filtered_words_df.groupBy("word").count().orderBy(col("count").desc())
+        
+        # Collect results
+        word_counts = word_counts_df.collect()
+        
+        # Extract words and counts
+        filtered_words = [row["word"] for row in word_counts]
+        
+        # For all words (without stopwords filtering)
+        all_word_counts_df = words_df.groupBy("word").count().orderBy(col("count").desc())
+        all_word_counts = all_word_counts_df.collect()
+        all_words = [row["word"] for row in all_word_counts]
+        
+        return all_words, filtered_words
+    except Exception as e:
+        print(f"PySpark word count fallback due to error: {e}")
+        all_words = clean_text_all_words(text)
+        filtered_words = [w for w in all_words if w not in stopwords]
+        return all_words, filtered_words
 
 # --- Routes ---
 @app.route('/')
@@ -107,10 +183,10 @@ def analyze():
             return jsonify({"error": "No file selected"}), 400
 
         # Check file extension
-        allowed_extensions = {'.txt', '.docx', '.pdf'}
+        allowed_extensions = {'.txt', '.docx', '.pdf', '.csv', '.html', '.htm'}
         file_extension = os.path.splitext(file.filename)[1].lower()
         if file_extension not in allowed_extensions:
-            return jsonify({"error": "Please upload a text (.txt), Word (.docx), or PDF (.pdf) file"}), 400
+            return jsonify({"error": "Please upload TXT, DOCX, PDF, CSV, or HTML file"}), 400
 
         # Get stopwords
         stopwords_raw = request.form.get('stopwords', '')
@@ -140,13 +216,39 @@ def analyze():
 
         try:
             # Get all words (without stopwords filtering) for the complete word list
-            # Use PySpark if available, otherwise fall back to simple implementation
-            all_words, filtered_words = spark_word_count(text, stopwords)
-            
-            all_counter = Counter(all_words)
-            filtered_counter = Counter(filtered_words)
-            if len(filtered_counter) == 0:
-                return jsonify({"error": "No valid words found in the text"}), 400
+            # Use PySpark if available and session is active, otherwise fall back to simple implementation
+            if SPARK_AVAILABLE and spark_session is not None and pyspark_analyzer.is_pyspark_available():
+                # Create a temporary file for PySpark analysis
+                import tempfile
+                with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.txt') as temp_file:
+                    temp_file.write(text)
+                    temp_filepath = temp_file.name
+                
+                try:
+                    # Use our dedicated PySpark analyzer for file-based analysis
+                    all_words, filtered_words = pyspark_analyzer.analyze_text_with_pyspark(temp_filepath, stopwords)
+                finally:
+                    # Clean up temporary file
+                    os.unlink(temp_filepath)
+                
+                # Create counters from the results
+                all_counter = Counter(all_words)
+                filtered_counter = Counter(filtered_words)
+                if len(filtered_counter) == 0:
+                    return jsonify({"error": "No valid words found in the text"}), 400
+            else:
+                # Use the text-based approach
+                all_words = clean_text_all_words(text)
+                all_counter = Counter(all_words)
+                
+                # Get filtered words (with stopwords) for the top words chart
+                filtered_words = clean_text(text, stopwords)
+                if not filtered_words and stopwords:
+                    return jsonify({"error": "No valid words found after removing punctuation and stopwords"}), 400
+
+                filtered_counter = Counter(filtered_words)
+                if len(filtered_counter) == 0:
+                    return jsonify({"error": "No valid words found in the text"}), 400
 
             # Get top words (filtered by stopwords)
             top = filtered_counter.most_common(15)
@@ -173,16 +275,34 @@ def analyze():
             # Store in history
             try:
                 history = load_history()
+                source_type = "pyspark" if SPARK_AVAILABLE and spark_session is not None else "file"
+                spark_ui_url = None
+                job_id = None
+                if source_type == "pyspark":
+                    try:
+                        spark_ui_url = spark_session.sparkContext.uiWebUrl
+                        tracker = spark_session.sparkContext.statusTracker()
+                        completed = tracker.getCompletedJobIds()
+                        if completed:
+                            job_id = completed[-1]
+                    except Exception:
+                        pass
                 record = {
                     "id": len(history) + 1,
                     "filename": safe_filename,
                     "stored_at": datetime.now().isoformat(),
+                    "source": source_type,
+                    "status": "completed",
                     "top_words": top_words,
                     "top_counts": top_counts,
                     "all_words": all_words_list,
                     "all_counts": all_counts_list,
                     "total_words": len(all_words),
-                    "unique_words": len(all_counter)
+                    "unique_words": len(all_counter),
+                    "stopwords": list(stopwords) if stopwords else [],
+                    "processing_time": "< 1s",
+                    "spark_ui": spark_ui_url,
+                    "spark_job_id": job_id
                 }
                 history.append(record)
                 save_history(history)
@@ -303,6 +423,43 @@ def analyze_url():
             all_words_list = list(all_counter.keys())
             all_counts_list = list(all_counter.values())
 
+            # Store in history
+            try:
+                history = load_history()
+                source_type = "pyspark" if SPARK_AVAILABLE and spark_session is not None else "url"
+                spark_ui_url = None
+                job_id = None
+                if source_type == "pyspark":
+                    try:
+                        spark_ui_url = spark_session.sparkContext.uiWebUrl
+                        tracker = spark_session.sparkContext.statusTracker()
+                        completed = tracker.getCompletedJobIds()
+                        if completed:
+                            job_id = completed[-1]
+                    except Exception:
+                        pass
+                record = {
+                    "id": len(history) + 1,
+                    "filename": url,
+                    "stored_at": datetime.now().isoformat(),
+                    "source": source_type,
+                    "status": "completed",
+                    "top_words": top_words,
+                    "top_counts": top_counts,
+                    "all_words": all_words_list,
+                    "all_counts": all_counts_list,
+                    "total_words": len(all_words),
+                    "unique_words": len(all_counter),
+                    "stopwords": list(stopwords) if stopwords else [],
+                    "processing_time": "< 1s",
+                    "spark_ui": spark_ui_url,
+                    "spark_job_id": job_id
+                }
+                history.append(record)
+                save_history(history)
+            except Exception as e:
+                app.logger.error(f"Error saving history: {e}")
+
             # Return results
             return jsonify({
                 "top_words": top_words,
@@ -399,5 +556,117 @@ def update_analysis():
         app.logger.error(f"Unexpected error: {str(e)}")
         return jsonify({"error": "An unexpected error occurred"}), 500
 
+@app.route('/api/history', methods=['GET'])
+def get_history():
+    """Get all history records"""
+    try:
+        history = load_history()
+        return jsonify(history)
+    except Exception as e:
+        app.logger.error(f"Error loading history: {str(e)}")
+        return jsonify({"error": "Failed to load history"}), 500
+
+@app.route('/api/history/<int:record_id>', methods=['DELETE'])
+def delete_history_record(record_id):
+    """Delete a specific history record"""
+    try:
+        history = load_history()
+        # Find and remove the record
+        updated_history = [r for r in history if r.get('id') != record_id]
+        
+        if len(updated_history) == len(history):
+            return jsonify({"error": "Record not found"}), 404
+        
+        save_history(updated_history)
+        return jsonify({"success": True, "message": "Record deleted successfully"})
+    except Exception as e:
+        app.logger.error(f"Error deleting history record: {str(e)}")
+        return jsonify({"error": "Failed to delete record"}), 500
+
+# --- Spark Management Endpoints ---
+@app.route('/api/spark/start', methods=['POST'])
+def spark_start():
+    if not SPARK_AVAILABLE:
+        return jsonify({"error": "PySpark not available in this environment"}), 400
+    global spark_session
+    if spark_session is not None:
+        try:
+            if not spark_session.sparkContext._jsc.sc().isStopped():
+                return jsonify({"message": "Spark session already active"})
+        except Exception:
+            pass
+    try:
+        spark_session = SparkSession.builder.appName("WordIntelligence").getOrCreate()
+        return jsonify({"message": "Spark session started", "spark_ui_url": spark_session.sparkContext.uiWebUrl})
+    except Exception as e:
+        app.logger.error(f"Spark start error: {e}")
+        return jsonify({"error": f"Failed to start Spark: {e}"}), 500
+
+@app.route('/api/spark/stop', methods=['POST'])
+def spark_stop():
+    global spark_session
+    if spark_session is None:
+        return jsonify({"message": "No active Spark session"})
+    try:
+        spark_session.stop()
+        spark_session = None
+        return jsonify({"message": "Spark session stopped"})
+    except Exception as e:
+        app.logger.error(f"Spark stop error: {e}")
+        return jsonify({"error": f"Failed to stop Spark: {e}"}), 500
+
+@app.route('/api/spark/status', methods=['GET'])
+def spark_status():
+    if not SPARK_AVAILABLE:
+        return jsonify({
+            "active": False,
+            "running_jobs": 0,
+            "completed_jobs": 0,
+            "executor_memory": None,
+            "last_job_runtime": last_spark_job_runtime,
+            "spark_ui_url": None
+        })
+    global spark_session
+    active = False
+    running_jobs = 0
+    completed_jobs = 0
+    executor_memory = None
+    spark_ui_url = None
+    try:
+        if spark_session is not None:
+            sc = spark_session.sparkContext
+            spark_ui_url = sc.uiWebUrl
+            tracker = sc.statusTracker()
+            running_jobs = len(tracker.getActiveJobIds())
+            completed_jobs = len(tracker.getCompletedJobIds())
+            # Memory status (total - remaining across executors)
+            try:
+                mem_status = sc._jsc.sc().getExecutorMemoryStatus().entrySet()
+                total = 0
+                used = 0
+                for entry in mem_status:
+                    host = entry.getKey()
+                    vals = entry.getValue()
+                    host_total = int(vals._1()) if hasattr(vals, '_1') else int(vals[0])
+                    host_remaining = int(vals._2()) if hasattr(vals, '_2') else int(vals[1])
+                    total += host_total
+                    used += (host_total - host_remaining)
+                if total > 0:
+                    executor_memory = f"{used/1024/1024:.1f}MB / {total/1024/1024:.1f}MB"
+            except Exception:
+                executor_memory = None
+            active = True
+    except Exception as e:
+        app.logger.error(f"Spark status error: {e}")
+    return jsonify({
+        "active": active,
+        "running_jobs": running_jobs,
+        "completed_jobs": completed_jobs,
+        "executor_memory": executor_memory,
+        "last_job_runtime": last_spark_job_runtime,
+        "spark_ui_url": spark_ui_url
+    })
+
 if __name__ == '__main__':
-    app.run(debug=True)
+    # Disable debug to improve Spark session stability
+    app.run(debug=False)

@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Word Count Analyzer</title>
+  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
+  <style>
+    /* Add CSS styles here */
+    :root {
+      --primary: #2c3e50;
+      --secondary: #3498db;
+      --accent: #e74c3c;
+      --light: #ecf0f1;
+      --dark: #2c3e50;
+      --muted: #7f8c8d;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      color: #333;
+    }
+
+    header {
+      background: rgba(255, 255, 255, 0.95);
+      padding: 1rem 2rem;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    h1 {
+      color: var(--primary);
+      font-size: 1.8rem;
+    }
+
+    nav {
+      display: flex;
+      gap: 1rem;
+    }
+
+    nav a {
+      text-decoration: none;
+      padding: 0.5rem 1rem;
+      border-radius: 5px;
+      color: var(--muted);
+      transition: all 0.3s ease;
+    }
+
+    nav a.active-tab {
+      background: var(--secondary);
+      color: white;
+    }
+
+    nav a:hover:not(.active-tab) {
+      background: var(--light);
+    }
+
+    main {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 2rem;
+      padding: 2rem;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .panel {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 15px;
+      padding: 2rem;
+      box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+      backdrop-filter: blur(10px);
+    }
+
+    .panel.left {
+      min-height: 600px;
+    }
+
+    .drop-zone {
+      border: 3px dashed var(--secondary);
+      border-radius: 10px;
+      padding: 3rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      background: rgba(52, 152, 219, 0.1);
+    }
+
+    .drop-zone:hover, .drop-zone.dragover {
+      background: rgba(52, 152, 219, 0.2);
+      border-color: var(--primary);
+    }
+
+    .button {
+      background: var(--secondary);
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    .button:hover {
+      background: var(--primary);
+    }
+
+    .options {
+      margin: 1.5rem 0;
+    }
+
+    .stopwords-input-group {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+
+    .stopwords input {
+      flex: 1;
+      padding: 0.5rem;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+
+    .search-input-group {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+
+    .search-input-group input {
+      flex: 1;
+      padding: 0.5rem;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+
+    #search-results {
+      margin-top: 1rem;
+      padding: 1rem;
+      background: #f8f9fa;
+      border-radius: 5px;
+      display: none;
+    }
+
+    .chart-container {
+      height: 400px;
+      margin: 1.5rem 0;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin: 1rem 0;
+    }
+
+    .stats p {
+      background: var(--light);
+      padding: 1rem;
+      border-radius: 5px;
+      text-align: center;
+    }
+
+    .history-item {
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      padding: 1rem;
+      margin: 0.5rem 0;
+      background: white;
+    }
+
+    .history-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.5rem;
+    }
+
+    .history-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.5rem;
+      margin: 0.5rem 0;
+    }
+
+    .stat-item {
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .history-actions {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+    }
+
+    .modal.show {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-content {
+      background: white;
+      border-radius: 10px;
+      width: 90%;
+      max-width: 800px;
+      max-height: 80vh;
+      overflow: auto;
+    }
+
+    .modal-header {
+      padding: 1rem;
+      border-bottom: 1px solid #ddd;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .close-modal {
+      font-size: 1.5rem;
+      cursor: pointer;
+    }
+
+    .modal-body {
+      padding: 1rem;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      padding: 0.5rem;
+      text-align: left;
+      border-bottom: 1px solid #ddd;
+    }
+
+    th {
+      background: var(--light);
+    }
+
+    footer {
+      text-align: center;
+      padding: 1rem;
+      color: white;
+      background: rgba(0,0,0,0.3);
+    }
+
+    .tips {
+      margin-top: 1.5rem;
+      padding: 1rem;
+      background: rgba(52, 152, 219, 0.1);
+      border-radius: 10px;
+    }
+
+    .tips h4 {
+      color: var(--primary);
+      margin-bottom: 0.5rem;
+    }
+
+    .tips ul {
+      padding-left: 1.5rem;
+    }
+
+    .tips li {
+      margin: 0.25rem 0;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Word Count Analyzer</h1>
+    <nav>
+      <a href="#" class="active-tab" id="analyzer-tab">Analyzer</a>
+      <a href="#" id="history-tab">History</a>
+    </nav>
+  </header>
+
+  <main>
+    <div class="panel left">
+      <div id="analyzer-panel">
+        <div class="drop-zone" id="drop-zone">
+          <p id="drop-instruction">Drop your file here or click to upload (TXT, DOCX, PDF)</p>
+          <input type="file" id="file-input" accept=".txt,.docx,.pdf" style="display: none;">
+        </div>
+        
+        <!-- URL analysis section -->
+        <div style="margin-top: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 5px; background: #f9f9f9;">
+          <h3>Analyze Content from URL</h3>
+          <div style="display: flex; gap: 10px; margin-top: 10px;">
+            <input type="url" id="url-input" placeholder="https://example.com/article.txt" style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
+            <button id="analyze-url-btn" class="button">Analyze URL</button>
+          </div>
+        </div>
+
+        <div id="file-actions" style="margin-top:12px; display:flex; align-items:center; gap:10px;">
+          <span id="selected-filename" style="color:var(--muted);">No file selected</span>
+          <button id="analyze-btn" class="button" style="display:none;">Analyze</button>
+        </div>
+        
+        <div class="options">
+          <div class="stopwords">
+            <label>Stopwords (comma-separated):</label>
+            <div class="stopwords-input-group">
+              <input type="text" id="stopwords" placeholder="the, and, or, ...">
+              <button id="apply-stopwords" class="button">Apply</button>
+            </div>
+          </div>
+          
+          <!-- Search bar for particular words -->
+          <div class="search-section" style="margin-top: 1.5rem;">
+            <label>Search for specific words:</label>
+            <div class="search-input-group" style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+              <input type="text" id="word-search" placeholder="Enter a word to search...">
+              <button id="search-word-btn" class="button">Search</button>
+            </div>
+            <div id="search-results" style="margin-top: 1rem; padding: 1rem; background: #f8f9fa; border-radius: 5px; display: none;">
+              <h4>Search Results:</h4>
+              <p id="search-result-text"></p>
+            </div>
+          </div>
+        </div>
+
+        <div id="results" style="display: none;">
+          <h2>Analysis Results</h2>
+          <div class="chart-container">
+            <canvas id="word-chart"></canvas>
+          </div>
+          <div class="stats">
+            <p>Total Words: <span id="total-words">0</span></p>
+            <p>Unique Words: <span id="unique-words">0</span></p>
+            <a id="download-csv" class="button" style="display:inline-block; text-decoration:none; grid-column: 1 / -1; text-align: center;">Download CSV</a>
+          </div>
+        </div>
+      </div>
+
+      <div id="history-panel" style="display: none;">
+        <h2>Analysis History</h2>
+        <div id="history-list"></div>
+      </div>
+    </div>
+
+    <div class="panel right">
+      <h3>Instructions</h3>
+      <ol>
+        <li>Upload a text file (TXT, DOCX, PDF) by dropping it or clicking the upload area</li>
+        <li>Or analyze content directly from a URL</li>
+        <li>Optionally add stopwords to exclude common words</li>
+        <li>View the analysis results and charts</li>
+        <li>Download the detailed CSV report (for file uploads only)</li>
+      </ol>
+      <div class="tips">
+        <h4>Tips:</h4>
+        <ul>
+          <li>Larger files may take longer to process</li>
+          <li>Use stopwords to filter out common words</li>
+          <li>Check the history tab for past analyses</li>
+          <li>Supported formats: TXT, DOCX, PDF</li>
+          <li>You can also analyze content from URLs</li>
+        </ul>
+      </div>
+    </div>
+  </main>
+
+  <!-- Modal for showing data -->
+  <div id="dataModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Word Frequency Data</h3>
+        <span class="close-modal">&times;</span>
+      </div>
+      <div class="modal-body">
+        <table id="wordDataTable">
+          <thead>
+            <tr>
+              <th>Word</th>
+              <th>Frequency</th>
+            </tr>
+          </thead>
+          <tbody>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <p>&copy; 2025 Word Count Analyzer</p>
+  </footer>
+
+  <script>
+    // Global variables
+    let currentChart = null;
+    let lastAnalysisData = null;
+
+    // Modal handling functions
+    const modal = document.getElementById('dataModal');
+    const closeBtn = document.querySelector('.close-modal');
+    
+    function showModal() {
+      modal.classList.add('show');
+      document.body.style.overflow = 'hidden';
+    }
+    
+    function hideModal() {
+      modal.classList.remove('show');
+      document.body.style.overflow = '';
+    }
+    
+    function showWordData(data) {
+      const tableBody = document.querySelector('#wordDataTable tbody');
+      tableBody.innerHTML = '';
+      
+      // Create rows for each word and its frequency
+      data.top_words.forEach((word, index) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${word}</td>
+          <td>${data.top_counts[index].toLocaleString()}</td>
+        `;
+        tableBody.appendChild(row);
+      });
+      
+      // Update modal title with filename
+      const modalTitle = document.querySelector('.modal-header h3');
+      modalTitle.textContent = `Word Frequency Data - ${data.filename}`;
+      
+      showModal();
+    }
+    
+    // Close modal when clicking close button or outside
+    closeBtn.addEventListener('click', hideModal);
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) hideModal();
+    });
+    
+    // Close modal with Escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && modal.classList.contains('show')) {
+        hideModal();
+      }
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // File upload handling
+      const dropZone = document.getElementById('drop-zone');
+      const fileInput = document.getElementById('file-input');
+      const resultsDiv = document.getElementById('results');
+      const downloadBtn = document.getElementById('download-csv');
+      const historyList = document.getElementById('history-list');
+
+      // Tab switching
+      const analyzerTab = document.getElementById('analyzer-tab');
+      const historyTab = document.getElementById('history-tab');
+      const analyzerPanel = document.getElementById('analyzer-panel');
+      const historyPanel = document.getElementById('history-panel');
+
+      analyzerTab.addEventListener('click', (e) => {
+        e.preventDefault();
+        analyzerTab.classList.add('active-tab');
+        historyTab.classList.remove('active-tab');
+        analyzerPanel.style.display = 'block';
+        historyPanel.style.display = 'none';
+      });
+
+      historyTab.addEventListener('click', (e) => {
+        e.preventDefault();
+        historyTab.classList.add('active-tab');
+        analyzerTab.classList.remove('active-tab');
+        historyPanel.style.display = 'block';
+        analyzerPanel.style.display = 'none';
+        loadHistory();
+      });
+
+      // File drop handling
+      dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.classList.add('dragover');
+      });
+
+      dropZone.addEventListener('dragleave', () => {
+        dropZone.classList.remove('dragover');
+      });
+
+      dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('dragover');
+        const file = e.dataTransfer.files[0];
+        if (file) selectFile(file);
+      });
+
+      dropZone.addEventListener('click', () => {
+        fileInput.click();
+      });
+
+      fileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) selectFile(file);
+      });
+
+      // Selected file kept until user clicks Analyze
+      let selectedFile = null;
+
+      function selectFile(file) {
+        if (!file) return;
+        
+        // Check file extension
+        const allowedExtensions = ['.txt', '.docx', '.pdf'];
+        const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
+        if (!allowedExtensions.includes(fileExtension)) {
+          alert('Please upload a text (.txt), Word (.docx), or PDF (.pdf) file.');
+          return;
+        }
+
+        selectedFile = file;
+
+        // Show filename and reveal Analyze button
+        document.getElementById('selected-filename').textContent = file.name;
+        const analyzeBtn = document.getElementById('analyze-btn');
+        analyzeBtn.style.display = 'inline-block';
+
+        // Clear previous chart/results
+        if (currentChart) {
+          currentChart.destroy();
+          currentChart = null;
+        }
+        resultsDiv.style.display = 'none';
+      }
+
+      // Analyze button click handler
+      document.getElementById('analyze-btn').addEventListener('click', analyzeFile);
+
+      // Handle stopwords changes
+      const stopwordsInput = document.getElementById('stopwords');
+      const applyStopwordsBtn = document.getElementById('apply-stopwords');
+      
+      function handleStopwordsUpdate(e) {
+        e.preventDefault();
+        if (lastAnalysisData) {
+          updateAnalysisWithStopwords();
+        } else {
+          alert('Please analyze a file first before applying stopwords.');
+        }
+      }
+      
+      stopwordsInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          handleStopwordsUpdate(e);
+        }
+      });
+      
+      applyStopwordsBtn.addEventListener('click', handleStopwordsUpdate);
+
+      // Handle word search functionality
+      const wordSearchInput = document.getElementById('word-search');
+      const searchWordBtn = document.getElementById('search-word-btn');
+      const searchResultsDiv = document.getElementById('search-results');
+      const searchResultText = document.getElementById('search-result-text');
+      
+      function searchForWord() {
+        const searchTerm = wordSearchInput.value.trim().toLowerCase();
+        if (!searchTerm) {
+          alert('Please enter a word to search for.');
+          return;
+        }
+        
+        if (!lastAnalysisData) {
+          alert('Please analyze a file first.');
+          return;
+        }
+        
+        // Search in all words
+        const allWords = lastAnalysisData.all_words || [];
+        const allCounts = lastAnalysisData.all_counts || [];
+        
+        // Find the word and its count
+        let found = false;
+        let count = 0;
+        
+        for (let i = 0; i < allWords.length; i++) {
+          if (allWords[i].toLowerCase() === searchTerm) {
+            found = true;
+            count = allCounts[i];
+            break;
+          }
+        }
+        
+        // Display results
+        searchResultsDiv.style.display = 'block';
+        if (found) {
+          searchResultText.innerHTML = `The word <strong>"${searchTerm}"</strong> appears <strong>${count}</strong> time(s) in the document.`;
+        } else {
+          searchResultText.innerHTML = `The word <strong>"${searchTerm}"</strong> was not found in the document.`;
+        }
+      }
+      
+      wordSearchInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          searchForWord();
+        }
+      });
+      
+      searchWordBtn.addEventListener('click', searchForWord);
+
+      function analyzeFile() {
+        if (!selectedFile) {
+          alert('No file selected. Please select a .txt file first.');
+          return;
+        }
+
+        const formData = new FormData();
+        formData.append('file', selectedFile);
+        formData.append('stopwords', document.getElementById('stopwords').value);
+
+        // Show loading state
+        document.getElementById('drop-instruction').innerHTML = 'Analyzing file...';
+        document.getElementById('analyze-btn').disabled = true;
+        console.log('Sending /analyze request...');
+
+        fetch('/analyze', {
+          method: 'POST',
+          body: formData
+        })
+        .then(response => {
+          if (!response.ok) {
+            return response.text().then(text => {
+              throw new Error(`HTTP ${response.status}: ${text}`);
+            });
+          }
+          return response.json();
+        })
+        .then(data => {
+          if (data.error) throw new Error(data.error);
+
+          // Store the analysis data for stopword updates
+          lastAnalysisData = data;
+
+          // Reset drop zone instruction
+          document.getElementById('drop-instruction').innerHTML = 'Drop your file here or click to upload (TXT, DOCX, PDF)';
+          document.getElementById('analyze-btn').disabled = false;
+
+          // Update statistics
+          document.getElementById('total-words').textContent = (data.total_words || 0).toLocaleString();
+          document.getElementById('unique-words').textContent = (data.unique_words || 0).toLocaleString();
+
+          // Update chart and download link
+          updateChart({ top_words: data.top_words, top_counts: data.top_counts, filename: data.filename });
+          if (data.csv_download) {
+            downloadBtn.href = data.csv_download;
+            downloadBtn.style.display = 'inline-block';
+          } else {
+            downloadBtn.style.display = 'none';
+          }
+
+          resultsDiv.style.display = 'block';
+
+          // Clear selected file so user can edit and re-upload if desired
+          selectedFile = null;
+          document.getElementById('selected-filename').textContent = 'No file selected';
+          document.getElementById('analyze-btn').style.display = 'none';
+          
+          // Clear previous search results
+          searchResultsDiv.style.display = 'none';
+        })
+        .catch(error => {
+          console.error('Analysis error:', error);
+          document.getElementById('drop-instruction').innerHTML = 'Drop your file here or click to upload (TXT, DOCX, PDF)';
+          document.getElementById('analyze-btn').disabled = false;
+          alert(error.message || 'An error occurred during analysis. Please try again.');
+        });
+      }
+
+      function updateChart(data) {
+        const ctx = document.getElementById('word-chart').getContext('2d');
+        
+        // Destroy existing chart if it exists
+        if (currentChart) {
+          currentChart.destroy();
+        }
+        
+        // Create new chart
+        currentChart = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: data.top_words,
+            datasets: [{
+              label: 'Word Frequency',
+              data: data.top_counts,
+              backgroundColor: 'rgba(45, 170, 255, 0.5)',
+              borderColor: 'rgba(45, 170, 255, 1)',
+              borderWidth: 1
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                display: true,
+                position: 'top'
+              },
+              title: {
+                display: true,
+                text: data.filename ? `Word Frequency Analysis - ${data.filename}` : 'Word Frequency Analysis',
+                font: {
+                  size: 16
+                }
+              }
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                title: {
+                  display: true,
+                  text: 'Frequency',
+                  font: {
+                    size: 14
+                  }
+                }
+              },
+              x: {
+                title: {
+                  display: true,
+                  text: 'Words',
+                  font: {
+                    size: 14
+                  }
+                },
+                ticks: {
+                  maxRotation: 45,
+                  minRotation: 45,
+                  autoSkip: false
+                }
+              }
+            }
+          }
+        });
+      }
+
+      function loadHistory() {
+        historyList.innerHTML = '<p>Loading...</p>';
+        fetch('/list_history')
+          .then(response => response.json())
+          .then(history => {
+            if (history.length === 0) {
+              historyList.innerHTML = '<p>No analysis history found</p>';
+              return;
+            }
+
+            const items = history.map(item => `
+              <div class="history-item">
+                <div class="history-header">
+                  <h4>${item.filename}</h4>
+                  <span class="history-date">${new Date(item.stored_at).toLocaleString()}</span>
+                </div>
+                <div class="history-stats">
+                  <div class="stat-item">
+                    <span class="stat-label">Total Words:</span>
+                    <span class="stat-value">${item.total_words.toLocaleString()}</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-label">Unique Words:</span>
+                    <span class="stat-value">${item.unique_words.toLocaleString()}</span>
+                  </div>
+                </div>
+                <div class="history-actions">
+                  <button onclick="showWordData(${JSON.stringify(item).replace(/"/g, '&quot;')})" class="button">
+                    Show Data
+                  </button>
+                  <button onclick="showHistoryDetail(${item.id})" class="button">
+                    View Analysis
+                  </button>
+                </div>
+              </div>
+            `).join('');
+
+            historyList.innerHTML = items;
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            historyList.innerHTML = '<p>Error loading history</p>';
+          });
+      }
+
+      function updateAnalysisWithStopwords() {
+        if (!lastAnalysisData) return;
+
+        const stopwords = document.getElementById('stopwords').value;
+        const formData = new FormData();
+        formData.append('filename', lastAnalysisData.filename);
+        formData.append('stopwords', stopwords);
+
+        fetch('/api/update_analysis', {
+          method: 'POST',
+          body: formData
+        })
+        .then(response => {
+          if (!response.ok) {
+            return response.text().then(text => { throw new Error(`HTTP ${response.status}: ${text}`); });
+          }
+          return response.json();
+        })
+        .then(data => {
+          if (data.error) throw new Error(data.error);
+
+          // Update statistics
+          document.getElementById('total-words').textContent = (data.total_words || 0).toLocaleString();
+          document.getElementById('unique-words').textContent = (data.unique_words || 0).toLocaleString();
+
+          // Update chart
+          updateChart({
+            top_words: data.top_words,
+            top_counts: data.top_counts,
+            filename: data.filename
+          });
+
+          // Store the new analysis data
+          lastAnalysisData = data;
+        })
+        .catch(error => {
+          console.error('Analysis update error:', error);
+          alert(error.message || 'An error occurred while updating the analysis. Please try again.');
+        });
+      }
+
+      window.showHistoryDetail = function(id) {
+        fetch(`/history_detail/${id}`)
+          .then(response => response.json())
+          .then(data => {
+            if (data.error) {
+              alert(data.error);
+              return;
+            }
+            // Switch to analyzer tab and show results
+            analyzerTab.click();
+            
+            // Update chart and stats
+            updateChart({
+              top_words: data.top_words,
+              top_counts: data.top_counts,
+              filename: data.filename
+            });
+            
+            // Update statistics
+            document.getElementById('total-words').textContent = data.total_words || 0;
+            document.getElementById('unique-words').textContent = data.unique_words || 0;
+            
+            // Update download link
+            const base = data.filename.replace(/\.[^/.]+$/, '');
+            const csvName = `${base}_analysis.csv`;
+            downloadBtn.href = `/download/${csvName}`;
+            downloadBtn.style.display = 'inline-block';
+            
+            resultsDiv.style.display = 'block';
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            alert('Error loading history detail');
+          });
+      };
+      
+      // URL analysis functionality
+      document.getElementById('analyze-url-btn').addEventListener('click', analyzeUrl);
+      
+      function analyzeUrl() {
+        const url = document.getElementById('url-input').value.trim();
+        if (!url) {
+          alert('Please enter a URL to analyze.');
+          return;
+        }
+        
+        // Validate URL format
+        try {
+          new URL(url);
+        } catch (e) {
+          alert('Please enter a valid URL.');
+          return;
+        }
+        
+        const stopwords = document.getElementById('stopwords').value;
+        
+        const formData = new FormData();
+        formData.append('url', url);
+        formData.append('stopwords', stopwords);
+        
+        // Show loading state
+        document.getElementById('drop-instruction').innerHTML = 'Analyzing URL content...';
+        document.getElementById('analyze-url-btn').disabled = true;
+        
+        fetch('/analyze_url', {
+          method: 'POST',
+          body: formData
+        })
+        .then(response => {
+          if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+          return response.json();
+        })
+        .then(data => {
+          if (data.error) throw new Error(data.error);
+          
+          // Store the analysis data for stopword updates
+          lastAnalysisData = data;
+          
+          // Reset UI
+          document.getElementById('drop-instruction').innerHTML = 'Drop your file here or click to upload (TXT, DOCX, PDF)';
+          document.getElementById('analyze-url-btn').disabled = false;
+          
+          // Update statistics
+          document.getElementById('total-words').textContent = (data.total_words || 0).toLocaleString();
+          document.getElementById('unique-words').textContent = (data.unique_words || 0).toLocaleString();
+          
+          // Update chart and download link
+          updateChart({ top_words: data.top_words, top_counts: data.top_counts, filename: data.filename });
+          
+          // Hide download link for URL analysis (no CSV download)
+          downloadBtn.style.display = 'none';
+          
+          resultsDiv.style.display = 'block';
+          
+          // Clear previous search results
+          document.getElementById('search-results').style.display = 'none';
+        })
+        .catch(error => {
+          console.error('URL analysis error:', error);
+          document.getElementById('drop-instruction').innerHTML = 'Drop your file here or click to upload (TXT, DOCX, PDF)';
+          document.getElementById('analyze-url-btn').disabled = false;
+          alert(error.message || 'An error occurred during URL analysis. Please try again.');
+        });
+      }
+    });
+  </script>
+</body>
+</html>

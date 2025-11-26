@@ -1,0 +1,6 @@
+This is a test document for the Word Count Analyzer.
+It contains multiple sentences and words to test the analyzer.
+The analyzer should be able to count words correctly.
+This document is for testing purposes only.
+Testing is important for software development.
+Word count, sentence count, and other metrics are important.

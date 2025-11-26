@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Word Count Analyzer</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --accent: #2daaff;
+      --bg: #f9fbfd;
+      --text: #222;
+      --muted: #666;
+      --radius: 10px;
+    }
+    * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      margin: 0;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Header */
+    header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 60px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 24px;
+      background: white;
+      border-bottom: 1px solid #ddd;
+      z-index: 1000;
+    }
+    h1 { font-size: 20px; margin: 0; }
+    nav a {
+      margin-left: 18px;
+      color: var(--muted);
+      text-decoration: none;
+      font-weight: 600;
+      position: relative;
+    }
+    nav a.active-tab { color: var(--accent); }
+    nav a.active-tab::after {
+      content: "";
+      position: absolute;
+      bottom: -6px; left: 0;
+      width: 100%; height: 2px;
+      background: var(--accent);
+      border-radius: 1px;
+    }
+
+    /* Footer */
+    footer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 40px;
+      background: #f0f0f0;
+      border-top: 1px solid #ddd;
+      text-align: center;
+      line-height: 40px;
+      font-size: 14px;
+      color: #555;
+      z-index: 1000;
+    }
+
+    /* Main container */
+    main {
+      flex: 1;
+      display: flex;
+      gap: 20px;
+      padding: 20px;
+      margin-top: 60px;
+      margin-bottom: 40px;
+      overflow: hidden;
+    }
+    .panel {
+      background: white;
+      border-radius: var(--radius);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      padding: 20px;
+      overflow-y: auto;
+    }
+    .left { flex: 3; }
+    .right { flex: 1; max-width: 350px; }
+
+    .drop-zone {
+      border: 2px dashed #ccc;
+      border-radius: var(--radius);
+      padding: 50px;
+      text-align: center;
+      color: var(--muted);
+      cursor: pointer;
+    }
+    .btn {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 10px 18px;
+      border-radius: var(--radius);
+      cursor: pointer;
+      font-weight: 600;
+      margin-top: 10px;
+    }
+    .status {
+      margin-top: 15px;
+      font-weight: 600;
+      color: var(--accent);
+    }
+    input[type=text] {
+      padding: 8px 10px;
+      width: 100%;
+      border: 1px solid #ccc;
+      border-radius: var(--radius);
+    }
+
+    /* Chart + Empty State */
+    #chartContainer {
+      margin-top: 30px;
+      height: 400px;
+      position: relative;
+    }
+    #chart.hidden { display: none; }
+    #emptyState {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      color: #777;
+      text-align: center;
+      background: #fafafa;
+      border: 2px dashed #ddd;
+      border-radius: var(--radius);
+      transition: opacity 0.4s ease;
+    }
+    #emptyState img {
+      width: 120px;
+      opacity: 0.6;
+      margin-bottom: 10px;
+    }
+
+    /* Tables */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    th, td {
+      border-bottom: 1px solid #eee;
+      padding: 8px;
+      text-align: left;
+    }
+    th { background: #f6f9fc; }
+
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header>
+    <h1>Word Count Analyzer</h1>
+    <nav>
+      <a href="#" id="tabDashboard" class="active-tab">Dashboard</a>
+      <a href="#" id="tabHistory">History</a>
+    </nav>
+  </header>
+
+  <!-- Dashboard -->
+  <main id="dashboardPage">
+    <div class="panel left">
+      <div class="drop-zone" id="dropZone">Drop a text file or click to upload</div>
+      <input type="file" id="fileInput" accept=".txt" style="display:none">
+      <div style="margin-top:10px;">
+        <label>Custom stopwords (comma separated):</label>
+        <input type="text" id="stopwordsInput" placeholder="e.g., project,data,analysis">
+      </div>
+      <button class="btn" id="analyzeBtn">Analyze</button>
+      <div id="status" class="status"></div>
+
+      <div id="chartContainer">
+        <!-- Empty visual before analysis -->
+        <div id="emptyState">
+          <img src="https://cdn-icons-png.flaticon.com/512/4076/4076509.png" alt="Empty" />
+          <h3>No analysis yet</h3>
+          <p>Upload a text file and click <b>Analyze</b> to visualize word frequency.</p>
+        </div>
+        <canvas id="chart" class="hidden"></canvas>
+      </div>
+    </div>
+
+    <div class="panel right">
+      <h2>History</h2>
+      <div id="historyList">Loading...</div>
+    </div>
+  </main>
+
+  <!-- History Page -->
+  <main id="historyPage" class="hidden">
+    <div class="panel" style="width:100%;">
+      <h2>Analysis History</h2>
+      <table id="historyTable">
+        <thead><tr><th>ID</th><th>Filename</th><th>Date</th><th>Action</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer>© 2025 Word Count Analyzer | Built with ❤️ using HTML, CSS, JS</footer>
+
+  <script>
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+    const analyzeBtn = document.getElementById('analyzeBtn');
+    const statusDiv = document.getElementById('status');
+    const historyList = document.getElementById('historyList');
+    const chartContainer = document.getElementById('chartContainer');
+    const emptyState = document.getElementById('emptyState');
+    let selectedFile = null;
+    let chart = null;
+
+    dropZone.addEventListener('click', ()=> fileInput.click());
+    fileInput.addEventListener('change', e=>{
+      selectedFile = e.target.files[0];
+      dropZone.textContent = selectedFile ? selectedFile.name + " (" + selectedFile.size + " bytes)" : "Drop a text file or click to upload";
+    });
+
+    analyzeBtn.addEventListener('click', ()=>{
+      if(!selectedFile){ alert("Please choose a file"); return; }
+      statusDiv.textContent = "Processing...";
+      const data = new FormData();
+      data.append('file', selectedFile);
+      data.append('stopwords', document.getElementById('stopwordsInput').value);
+
+      fetch('/analyze', {method:'POST', body:data})
+      .then(r=>r.json())
+      .then(json=>{
+        statusDiv.textContent = "Analysis complete.";
+        renderChart(json.top_words, json.top_counts);
+        loadRecentHistory();
+      })
+      .catch(()=> statusDiv.textContent = "Processing failed");
+    });
+
+    function renderChart(words, counts) {
+      const ctx = document.getElementById('chart');
+      // Hide empty state
+      emptyState.style.display = "none";
+      ctx.classList.remove('hidden');
+
+      if(chart) chart.destroy();
+      chart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: words,
+          datasets: [{
+            label: 'Word Frequency',
+            data: counts,
+            backgroundColor: '#2daaff99'
+          }]
+        },
+        options: {
+          responsive: true,
+          scales: { y: { beginAtZero: true } }
+        }
+      });
+    }
+
+    function loadRecentHistory() {
+      fetch('/list_history').then(r=>r.json()).then(rows=>{
+        historyList.innerHTML = "";
+        if(!rows.length){ historyList.textContent = "No history yet"; return; }
+        rows.slice(0,5).forEach(rw=>{
+          const div = document.createElement('div');
+          div.innerHTML = `<b>${rw.filename}</b> <br><small>${(new Date(rw.stored_at)).toLocaleString()}</small>`;
+          historyList.appendChild(div);
+        });
+      });
+    }
+
+    // Tabs
+    const dashboardPage = document.getElementById('dashboardPage');
+    const historyPage = document.getElementById('historyPage');
+    const tabDashboard = document.getElementById('tabDashboard');
+    const tabHistory = document.getElementById('tabHistory');
+
+    tabDashboard.addEventListener('click', e=>{
+      e.preventDefault();
+      dashboardPage.classList.remove('hidden');
+      historyPage.classList.add('hidden');
+      tabDashboard.classList.add('active-tab');
+      tabHistory.classList.remove('active-tab');
+    });
+
+    tabHistory.addEventListener('click', e=>{
+      e.preventDefault();
+      dashboardPage.classList.add('hidden');
+      historyPage.classList.remove('hidden');
+      tabHistory.classList.add('active-tab');
+      tabDashboard.classList.remove('active-tab');
+      loadFullHistory();
+    });
+
+    function loadFullHistory(){
+      const tbody = document.querySelector('#historyTable tbody');
+      tbody.innerHTML = "<tr><td colspan='4'>Loading...</td></tr>";
+      fetch('/list_history').then(r=>r.json()).then(rows=>{
+        tbody.innerHTML = "";
+        if(!rows.length){ tbody.innerHTML = "<tr><td colspan='4'>No history</td></tr>"; return; }
+        rows.forEach(rw=>{
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${rw.id}</td>
+            <td>${rw.filename}</td>
+            <td>${(new Date(rw.stored_at)).toLocaleString()}</td>
+            <td><button class="btn" data-id="${rw.id}">View</button></td>`;
+          tbody.appendChild(tr);
+        });
+        tbody.querySelectorAll('button').forEach(btn=>{
+          btn.addEventListener('click', ()=>{
+            const id = btn.getAttribute('data-id');
+            fetch('/history_detail/'+id).then(r=>r.json()).then(json=>{
+              const popup = window.open('', '_blank', 'width=780,height=600');
+              popup.document.write('<pre style="font-family:monospace;white-space:pre-wrap">' + JSON.stringify(json, null, 2) + '</pre>');
+            });
+          });
+        });
+      });
+    }
+
+    loadRecentHistory();
+  </script>
+</body>
+</html>
