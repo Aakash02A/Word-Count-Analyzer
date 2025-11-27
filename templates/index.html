@@ -2956,60 +2956,127 @@
       // Clear previous content
       display.innerHTML = '';
 
-      // Use top 50 words for word cloud
-      const top50Words = data.top_words.slice(0, 50) || [];
-      const top50Counts = data.top_counts.slice(0, 50) || [];
+      // Comprehensive stopwords list (remove common, meaningless words)
+      const stopwords = new Set([
+        'the', 'be', 'to', 'of', 'and', 'a', 'in', 'that', 'have', 'i', 'it', 'for', 'not', 'on', 'with',
+        'he', 'as', 'you', 'do', 'at', 'this', 'but', 'his', 'by', 'from', 'they', 'we', 'say', 'her', 'she',
+        'or', 'an', 'will', 'my', 'one', 'all', 'would', 'there', 'their', 'what', 'so', 'up', 'out', 'if',
+        'about', 'who', 'get', 'which', 'go', 'me', 'when', 'make', 'can', 'like', 'time', 'no', 'just',
+        'him', 'know', 'take', 'people', 'into', 'year', 'your', 'good', 'some', 'could', 'them', 'see',
+        'other', 'than', 'then', 'now', 'look', 'only', 'come', 'its', 'over', 'think', 'also', 'back',
+        'after', 'use', 'two', 'how', 'our', 'work', 'first', 'well', 'way', 'even', 'new', 'want', 'because',
+        'any', 'these', 'give', 'day', 'most', 'us', 'is', 'was', 'are', 'been', 'has', 'had', 'were', 'said',
+        'did', 'having', 'may', 'should', 'am', 'very', 'much', 'such', 'being', 'through', 'where', 'too',
+        'here', 'more', 'mr', 'mrs', 'ms', 'dr', 'st'
+      ]);
+
+      // Filter words to remove stopwords and keep only meaningful content
+      const meaningfulWords = [];
+      const meaningfulCounts = [];
       
-      if (top50Words.length === 0) return;
+      for (let i = 0; i < (data.top_words || []).length && meaningfulWords.length < 80; i++) {
+        const word = data.top_words[i];
+        if (word && word.length > 2 && !stopwords.has(word.toLowerCase())) {
+          meaningfulWords.push(word);
+          meaningfulCounts.push(data.top_counts[i]);
+        }
+      }
       
-      const maxCount = Math.max(...top50Counts);
-      const minCount = Math.min(...top50Counts);
+      if (meaningfulWords.length === 0) return;
       
-      // Color palette for words
-      const colors = [
-        '#0C66E4', '#22C55E', '#F59E0B', '#EF4444', 
-        '#A855F7', '#14B8A6', '#EC4899', '#8B5CF6',
-        '#06B6D4', '#10B981', '#F97316', '#EAB308'
-      ];
+      const maxCount = Math.max(...meaningfulCounts);
+      const minCount = Math.min(...meaningfulCounts);
       
-      // Create word elements with sizes based on frequency
-      top50Words.forEach((word, i) => {
-        const count = top50Counts[i];
+      // Professional gradient color palette (Blue → Teal → Purple spectrum)
+      const getGradientColor = (normalizedSize) => {
+        // High frequency: Deep blue → Medium: Teal → Low: Purple
+        if (normalizedSize > 0.7) {
+          // Deep blue shades for most frequent
+          const intensity = Math.floor((normalizedSize - 0.7) / 0.3 * 50);
+          return `hsl(220, 85%, ${30 + intensity}%)`;
+        } else if (normalizedSize > 0.4) {
+          // Teal/cyan shades for medium frequency
+          const intensity = Math.floor((normalizedSize - 0.4) / 0.3 * 40);
+          return `hsl(190, 75%, ${35 + intensity}%)`;
+        } else if (normalizedSize > 0.2) {
+          // Purple shades for lower frequency
+          const intensity = Math.floor((normalizedSize - 0.2) / 0.2 * 30);
+          return `hsl(270, 70%, ${40 + intensity}%)`;
+        } else {
+          // Muted indigo for lowest frequency
+          return `hsl(240, 60%, 55%)`;
+        }
+      };
+      
+      // Calculate layout positions using spiral algorithm for dense packing
+      const centerX = display.offsetWidth / 2 || 300;
+      const centerY = display.offsetHeight / 2 || 200;
+      const positions = [];
+      
+      // Sort by frequency for better visual hierarchy
+      const wordData = meaningfulWords.map((word, i) => ({
+        word,
+        count: meaningfulCounts[i],
+        normalized: (meaningfulCounts[i] - minCount) / (maxCount - minCount)
+      })).sort((a, b) => b.count - a.count);
+      
+      // Create word elements with smart positioning
+      wordData.forEach((item, i) => {
+        const count = item.count;
+        const normalizedSize = item.normalized;
         
-        // Calculate font size based on frequency (10px to 48px)
-        const normalizedSize = (count - minCount) / (maxCount - minCount);
-        const fontSize = Math.max(10, Math.min(48, 12 + normalizedSize * 36));
+        // Enhanced size contrast: 14px to 72px (much larger range)
+        const fontSize = Math.max(14, Math.min(72, 18 + normalizedSize * 54));
+        
+        // Varied rotation for visual interest (-15° to +15°)
+        const rotationOptions = [-15, -10, -5, 0, 0, 0, 5, 10, 15];
+        const rotation = rotationOptions[i % rotationOptions.length];
         
         // Create word element
         const wordElement = document.createElement('span');
-        wordElement.textContent = word;
+        wordElement.textContent = item.word;
         wordElement.style.cssText = `
           font-size: ${fontSize}px;
-          font-weight: ${normalizedSize > 0.7 ? '700' : normalizedSize > 0.4 ? '600' : '500'};
-          color: ${colors[i % colors.length]};
-          padding: 4px 8px;
+          font-weight: ${normalizedSize > 0.7 ? '800' : normalizedSize > 0.5 ? '700' : normalizedSize > 0.3 ? '600' : '500'};
+          color: ${getGradientColor(normalizedSize)};
+          padding: 2px 6px;
           cursor: pointer;
-          transition: all 0.2s ease;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
           user-select: none;
           white-space: nowrap;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+          line-height: 1.2;
+          display: inline-block;
+          transform: rotate(${rotation}deg);
+          margin: 1px 2px;
+          opacity: ${0.85 + normalizedSize * 0.15};
         `;
         
-        // Add hover effect
+        // Refined hover effect
         wordElement.addEventListener('mouseenter', function() {
-          this.style.transform = 'scale(1.2)';
-          this.style.textShadow = '2px 2px 4px rgba(0,0,0,0.2)';
+          this.style.transform = `rotate(${rotation}deg) scale(1.15)`;
+          this.style.opacity = '1';
+          this.style.filter = 'drop-shadow(0 4px 8px rgba(0,0,0,0.15))';
+          this.style.zIndex = '100';
         });
         
         wordElement.addEventListener('mouseleave', function() {
-          this.style.transform = 'scale(1)';
-          this.style.textShadow = 'none';
+          this.style.transform = `rotate(${rotation}deg) scale(1)`;
+          this.style.opacity = `${0.85 + normalizedSize * 0.15}`;
+          this.style.filter = 'none';
+          this.style.zIndex = 'auto';
         });
         
-        // Show count on click
-        wordElement.title = `"${word}" appears ${count} time${count !== 1 ? 's' : ''}`;
+        // Show detailed info on click
+        wordElement.title = `"${item.word}" appears ${count} time${count !== 1 ? 's' : ''} (${(normalizedSize * 100).toFixed(1)}% relative frequency)`;
         
         display.appendChild(wordElement);
       });
+      
+      // Apply dense, justified text layout
+      display.style.textAlign = 'justify';
+      display.style.lineHeight = '1.1';
+      display.style.wordSpacing = '0.1em';
     }
 
     function renderTimeSeriesChart(data) {
