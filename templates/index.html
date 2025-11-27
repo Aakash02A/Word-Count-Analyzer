@@ -1468,11 +1468,48 @@
         display: none;
       }
     }
+
+    /* ========== Tab Switch Loading Button ========== */
+    .tab-switch-button {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      display: none;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 0.75rem;
+      background: var(--primary-color);
+      color: #fff;
+      border-radius: 999px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+      z-index: 9999;
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+    .tab-switch-button.active { display: inline-flex; }
+    .tab-switch-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      border: 2px solid rgba(255,255,255,0.7);
+      border-left-color: #fff;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Analyze button hover (dashboard) */
+    .btn-primary:hover { filter: brightness(1.05); transform: translateY(-1px); }
+    .btn-primary { transition: filter 0.15s ease, transform 0.15s ease; }
   </style>
 </head>
 
 <body>
   <div class="app-container">
+    <!-- Lightweight loading button shown during tab switches -->
+    <div id="tab-switch-button" class="tab-switch-button" aria-hidden="true">
+      <div class="tab-switch-dot" aria-hidden="true"></div>
+      <div>Switching…</div>
+    </div>
     <!-- Sidebar Navigation -->
     <aside class="sidebar">
       <div class="sidebar-header">
@@ -1649,18 +1686,7 @@
               </div>
             </div>
 
-            <!-- Optional Stopwords Section -->
-            <div style="margin-top: 1.5rem; padding: 1rem; background: var(--bg-main); border-radius: 8px;">
-              <label
-                style="display: block; font-size: 0.875rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.5rem;">
-                ⚙️ Stopwords (Optional)
-              </label>
-              <input type="text" id="dashboard-stopwords" placeholder="the, and, or, is, at..."
-                style="width: 100%; padding: 0.75rem 1rem; border: 1px solid var(--border-medium); border-radius: 8px; font-size: 0.875rem;">
-              <div style="margin-top: 0.5rem; font-size: 0.75rem; color: var(--text-muted);">
-                Enter comma-separated words to exclude from analysis
-              </div>
-            </div>
+            <!-- Stopwords on Dashboard removed: use Visualization filters -->
           </div>
 
           <!-- TAB 1: Visualizations -->
@@ -1704,6 +1730,38 @@
                 </div>
               </div>
             </div>
+            <!-- Dynamic Filters with inline buttons -->
+            <div style="margin-top: 1.5rem; padding: 1.5rem; background: white; border-radius: 12px; box-shadow: var(--shadow-sm); border: 1px solid var(--border-light);">
+              <!-- Stopwords Section -->
+              <div style="margin-bottom: 1rem;">
+                <label style="display: block; font-size: 0.875rem; font-weight: 500; color: #333; margin-bottom: 0.5rem;">
+                  Stopwords (comma-separated):
+                </label>
+                <div style="display: flex; gap: 0.5rem; align-items: stretch;">
+                  <input type="text" id="viz-stopwords" placeholder="the, and, or, is..."
+                    style="flex: 1; padding: 0.5rem 0.75rem; border: 1px solid #d1d5db; border-radius: 4px; font-size: 0.875rem;">
+                  <button id="viz-apply-stopwords" class="btn-primary" style="padding: 0.5rem 1.25rem; font-size: 0.875rem; white-space: nowrap; border-radius: 4px;">
+                    Apply
+                  </button>
+                </div>
+              </div>
+              
+              <!-- Search Word Section -->
+              <div style="margin-bottom: 0;">
+                <label style="display: block; font-size: 0.875rem; font-weight: 500; color: #333; margin-bottom: 0.5rem;">
+                  Search for specific words:
+                </label>
+                <div style="display: flex; gap: 0.5rem; align-items: stretch;">
+                  <input type="text" id="viz-searchword" placeholder="Enter a word to search..."
+                    style="flex: 1; padding: 0.5rem 0.75rem; border: 1px solid #d1d5db; border-radius: 4px; font-size: 0.875rem;">
+                  <button id="viz-apply-search" class="btn-primary" style="padding: 0.5rem 1.25rem; font-size: 0.875rem; white-space: nowrap; border-radius: 4px;">
+                    Search
+                  </button>
+                </div>
+              </div>
+              
+              <div id="viz-filter-error" class="spark-error-box hidden" style="margin-top: 0.75rem;"></div>
+            </div>
 
             <!-- Clean Word Analysis -->
             <div class="chart-section">
@@ -1722,54 +1780,69 @@
             <!-- Deep NLP Insights Grid -->
             <div class="chart-grid">
               <div class="chart-section">
-                <h3 class="chart-section-title">Bigram Frequency</h3>
-                <div class="chart-container" id="bigram-container">
+                <h3 class="chart-section-title">Word Cloud</h3>
+                <div class="chart-container" id="wordcloud-container" style="position: relative;">
+                  <div class="chart-loading"><div class="chart-loading-spinner"></div><div class="chart-loading-text">Loading chart...</div></div>
+                  <div class="chart-empty-state">
+                    <div class="chart-empty-icon">☁️</div>
+                    <div class="chart-empty-title">No Data Yet</div>
+                    <div class="chart-empty-text">Upload a file to see word cloud visualization</div>
+                  </div>
+                  <div id="wordcloud-display" style="width: 100%; height: 100%; position: absolute; top: 0; left: 0; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; padding: 20px; gap: 8px;"></div>
+                </div>
+              </div>
+              <div class="chart-section">
+                <h3 class="chart-section-title">Time-Series Word Frequency</h3>
+                <div class="chart-container" id="timeseries-container">
                   <div class="chart-loading"><div class="chart-loading-spinner"></div><div class="chart-loading-text">Loading chart...</div></div>
                   <div class="chart-empty-state">
                     <div class="chart-empty-icon">📈</div>
                     <div class="chart-empty-title">No Data Yet</div>
-                    <div class="chart-empty-text">Upload a file to see bigram analysis</div>
+                    <div class="chart-empty-text">Upload a file to see word frequency over document flow</div>
                   </div>
-                  <canvas id="bigram-chart"></canvas>
+                  <canvas id="timeseries-chart"></canvas>
                 </div>
               </div>
-              <div class="chart-section">
-                <h3 class="chart-section-title">Trigram Frequency</h3>
-                <div class="chart-container" id="trigram-container">
+            </div>
+
+            <div class="chart-grid">
+              <div class="chart-section" style="grid-column: 1 / -1;">
+                <h3 class="chart-section-title">Sentiment Word Distribution</h3>
+                <div class="chart-container" id="sentiment-container">
                   <div class="chart-loading"><div class="chart-loading-spinner"></div><div class="chart-loading-text">Loading chart...</div></div>
                   <div class="chart-empty-state">
-                    <div class="chart-empty-icon">📉</div>
+                    <div class="chart-empty-icon">😊</div>
                     <div class="chart-empty-title">No Data Yet</div>
-                    <div class="chart-empty-text">Upload a file to see trigram analysis</div>
+                    <div class="chart-empty-text">Upload a file to see sentiment analysis</div>
                   </div>
-                  <canvas id="trigram-chart"></canvas>
+                  <canvas id="sentiment-chart"></canvas>
                 </div>
               </div>
             </div>
 
             <div class="chart-grid">
               <div class="chart-section">
-                <h3 class="chart-section-title">Emotion Breakdown</h3>
-                <div class="chart-container" id="emotion-container">
+                <h3 class="chart-section-title">Co-Occurrence Network Graph</h3>
+                <div class="chart-container" id="cooccurrence-container">
                   <div class="chart-loading"><div class="chart-loading-spinner"></div><div class="chart-loading-text">Loading chart...</div></div>
                   <div class="chart-empty-state">
-                    <div class="chart-empty-icon">😊</div>
+                    <div class="chart-empty-icon">🔗</div>
                     <div class="chart-empty-title">No Data Yet</div>
-                    <div class="chart-empty-text">Upload a file to see emotion analysis</div>
+                    <div class="chart-empty-text">Upload a file to see word relationships</div>
                   </div>
-                  <canvas id="emotion-chart"></canvas>
+                  <canvas id="cooccurrence-chart"></canvas>
                 </div>
               </div>
               <div class="chart-section">
-                <h3 class="chart-section-title">TF-IDF Topic Clusters</h3>
-                <div class="chart-container" id="tfidf-container">
+                <h3 class="chart-section-title">Zipf's Law Plot</h3>
+                <div class="chart-container" id="zipf-container">
                   <div class="chart-loading"><div class="chart-loading-spinner"></div><div class="chart-loading-text">Loading chart...</div></div>
                   <div class="chart-empty-state">
-                    <div class="chart-empty-icon">🎯</div>
+                    <div class="chart-empty-icon">📉</div>
                     <div class="chart-empty-title">No Data Yet</div>
-                    <div class="chart-empty-text">Upload a file to see topic clusters</div>
+                    <div class="chart-empty-text">Upload a file to see Zipf's law distribution</div>
                   </div>
-                  <canvas id="tfidf-chart"></canvas>
+                  <canvas id="zipf-chart"></canvas>
                 </div>
               </div>
             </div>
@@ -2178,7 +2251,7 @@
       const clearBtn = document.getElementById('dashboard-clear-btn');
       const urlInput = document.getElementById('dashboard-url-input');
       const urlAnalyzeBtn = document.getElementById('dashboard-url-analyze-btn');
-      const stopwordsInput = document.getElementById('dashboard-stopwords');
+      const stopwordsInput = null; // Removed from dashboard; use Visualization filters
 
       let dashboardSelectedFile = null;
 
@@ -2242,7 +2315,7 @@
       analyzeBtn.addEventListener('click', () => {
         if (!dashboardSelectedFile) return;
 
-        const stopwords = stopwordsInput.value;
+        const stopwords = ''; // Dashboard no longer collects stopwords; apply via Visualization filters
         analyzeDashboardFile(dashboardSelectedFile, stopwords);
       });
 
@@ -2269,7 +2342,7 @@
           return;
         }
 
-        const stopwords = stopwordsInput.value;
+        const stopwords = ''; // Dashboard no longer collects stopwords; apply via Visualization filters
         analyzeDashboardURL(url, stopwords);
       });
 
@@ -2289,6 +2362,8 @@
       const startTime = Date.now();
       showGraphLoading();
       startSparkSimulation();
+      // Immediate redirect before network request completes
+      switchToView('visualizations');
 
       fetch('/analyze', {
         method: 'POST',
@@ -2301,9 +2376,10 @@
         .then(data => {
           if (data.error) throw new Error(data.error);
           const processingTime = Date.now() - startTime;
-          handleAnalysisSuccess(data, processingTime);
-          // Switch to Visualizations tab
+          // Switch to Visualizations tab ASAP
           switchToView('visualizations');
+          // Then render results
+          handleAnalysisSuccess(data, processingTime);
           // Clear dashboard selection
           document.getElementById('dashboard-file-input').value = '';
           document.getElementById('dashboard-file-selected').classList.add('hidden');
@@ -2322,6 +2398,8 @@
       const startTime = Date.now();
       showGraphLoading();
       startSparkSimulation();
+      // Immediate redirect before network request completes
+      switchToView('visualizations');
 
       fetch('/analyze_url', {
         method: 'POST',
@@ -2334,9 +2412,10 @@
         .then(data => {
           if (data.error) throw new Error(data.error);
           const processingTime = Date.now() - startTime;
-          handleAnalysisSuccess(data, processingTime);
-          // Switch to Visualizations tab
+          // Switch to Visualizations tab ASAP
           switchToView('visualizations');
+          // Then render results
+          handleAnalysisSuccess(data, processingTime);
           // Clear URL input
           document.getElementById('dashboard-url-input').value = '';
         })
@@ -2358,15 +2437,88 @@
       loadHistoryData();
       initializeSparkUITab();
       updateSparkStatus();
+      initializeVisualizationFilters();
       // Set initial active tab to dashboard
       document.querySelector('[data-tab="dashboard"]')?.classList.add('active');
       // Initialize dashboard controls
       initializeDashboard();
     });
+    function initializeVisualizationFilters() {
+      const stopwordsInput = document.getElementById('viz-stopwords');
+      const searchInput = document.getElementById('viz-searchword');
+      const applyStopwordsBtn = document.getElementById('viz-apply-stopwords');
+      const applySearchBtn = document.getElementById('viz-apply-search');
+      const errorBox = document.getElementById('viz-filter-error');
+
+      function showError(msg) {
+        if (errorBox) { errorBox.textContent = msg; errorBox.classList.remove('hidden'); }
+      }
+      function clearError() {
+        if (errorBox) { errorBox.classList.add('hidden'); errorBox.textContent = ''; }
+      }
+
+      // Apply stopwords handler
+      applyStopwordsBtn?.addEventListener('click', async () => {
+        clearError();
+        const filename = window.lastAnalyzedFilename;
+        const stopwords = stopwordsInput?.value || '';
+        if (!filename) {
+          showError('No analysis loaded. Upload a file or analyze a URL first.');
+          return;
+        }
+        try {
+          showGraphLoading();
+          const form = new FormData();
+          form.append('filename', filename);
+          form.append('stopwords', stopwords);
+          const resp = await fetch('/api/update_analysis', { method: 'POST', body: form });
+          if (!resp.ok) {
+            const data = await resp.json().catch(() => ({}));
+            throw new Error(data.error || 'Failed to update analysis');
+          }
+          const data = await resp.json();
+          const processingTime = 0;
+          // Preserve search highlight if present
+          const searchWord = (searchInput?.value || '').trim().toLowerCase();
+          if (searchWord) {
+            data.__highlight_word = searchWord;
+          }
+          handleAnalysisSuccess(data, processingTime);
+        } catch (e) {
+          showError(e.message || 'Update failed');
+        } finally {
+          hideGraphLoading();
+        }
+      });
+
+      // Apply search highlight handler
+      applySearchBtn?.addEventListener('click', async () => {
+        clearError();
+        const searchWord = (searchInput?.value || '').trim().toLowerCase();
+        if (!searchWord) {
+          showError('Please enter a word to search.');
+          return;
+        }
+        if (!currentAnalysisData) {
+          showError('No analysis loaded. Upload a file or analyze a URL first.');
+          return;
+        }
+        try {
+          // Re-render with highlight without re-fetching
+          currentAnalysisData.__highlight_word = searchWord;
+          renderWordFrequencyChart(currentAnalysisData);
+          clearError();
+        } catch (e) {
+          showError(e.message || 'Search failed');
+        }
+      });
+    }
 
     // ========== Navigation ==========
     function switchToView(viewName) {
       console.log('Switching to view:', viewName);
+      const loaderBtn = document.getElementById('tab-switch-button');
+      if (loaderBtn) loaderBtn.classList.add('active');
       
       // Update sidebar navigation
       document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
@@ -2398,6 +2550,11 @@
 
       // Close mobile menu if open
       closeMobileMenu();
+
+      // Hide loader after a short delay to feel responsive
+      setTimeout(() => {
+        if (loaderBtn) loaderBtn.classList.remove('active');
+      }, 300);
     }
 
     function updateBreadcrumb(viewName) {
@@ -2674,6 +2831,7 @@
     // ========== Analysis Success Handler ==========
     function handleAnalysisSuccess(data, processingTime) {
       currentAnalysisData = data;
+      window.lastAnalyzedFilename = data.filename || null;
       hideGraphLoading();
       completeSparkSimulation();
 
@@ -2687,10 +2845,11 @@
 
       // Render all charts
       renderWordFrequencyChart(data);
-      renderBigramChart(data);
-      renderTrigramChart(data);
-      renderEmotionChart(data);
-      renderTFIDFChart(data);
+      renderWordCloudChart(data);
+      renderTimeSeriesChart(data);
+      renderSentimentChart(data);
+      renderCoOccurrenceChart(data);
+      renderZipfChart(data);
 
       // Update raw data table
       updateRawDataTable(data);
@@ -2739,7 +2898,13 @@
       if (container) container.classList.add('has-data');
 
       const ctx = document.getElementById('word-frequency-chart').getContext('2d');
-      const colors = generateColorGradient(data.top_words.length, '#0C66E4', '#1D7AFC');
+      let colors = generateColorGradient(data.top_words.length, '#0C66E4', '#1D7AFC');
+      if (data.__highlight_word) {
+        const target = data.__highlight_word.toLowerCase();
+        colors = data.top_words.map((w, idx) => {
+          return (w && w.toLowerCase() === target) ? 'rgba(249, 115, 22, 0.9)' : colors[idx];
+        });
+      }
 
       currentCharts['word-frequency-chart'] = new Chart(ctx, {
         type: 'bar',
@@ -2749,7 +2914,7 @@
             label: 'Frequency',
             data: data.top_counts,
             backgroundColor: colors,
-            borderColor: colors.map(c => c.replace('0.7', '1')),
+            borderColor: colors.map(c => c.includes('249, 115, 22') ? 'rgba(234, 88, 12, 1)' : c.replace('0.7', '1')),
             borderWidth: 2,
             borderRadius: 6
           }]
@@ -2781,169 +2946,483 @@
       });
     }
 
-    function renderBigramChart(data) {
-      destroyChart('bigram-chart');
-      const bigrams = generateBigrams(data.top_words).slice(0, 10);
-
-      const container = document.getElementById('bigram-container');
+    function renderWordCloudChart(data) {
+      const container = document.getElementById('wordcloud-container');
       if (container) container.classList.add('has-data');
 
-      const ctx = document.getElementById('bigram-chart').getContext('2d');
-      currentCharts['bigram-chart'] = new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels: bigrams.map(b => b.pair),
-          datasets: [{
-            label: 'Frequency',
-            data: bigrams.map(b => b.count),
-            backgroundColor: 'rgba(34, 197, 94, 0.7)',
-            borderColor: '#22C55E',
-            borderWidth: 2,
-            borderRadius: 6
-          }]
-        },
-        options: chartOptions()
+      const display = document.getElementById('wordcloud-display');
+      if (!display) return;
+      
+      // Clear previous content
+      display.innerHTML = '';
+
+      // Use top 50 words for word cloud
+      const top50Words = data.top_words.slice(0, 50) || [];
+      const top50Counts = data.top_counts.slice(0, 50) || [];
+      
+      if (top50Words.length === 0) return;
+      
+      const maxCount = Math.max(...top50Counts);
+      const minCount = Math.min(...top50Counts);
+      
+      // Color palette for words
+      const colors = [
+        '#0C66E4', '#22C55E', '#F59E0B', '#EF4444', 
+        '#A855F7', '#14B8A6', '#EC4899', '#8B5CF6',
+        '#06B6D4', '#10B981', '#F97316', '#EAB308'
+      ];
+      
+      // Create word elements with sizes based on frequency
+      top50Words.forEach((word, i) => {
+        const count = top50Counts[i];
+        
+        // Calculate font size based on frequency (10px to 48px)
+        const normalizedSize = (count - minCount) / (maxCount - minCount);
+        const fontSize = Math.max(10, Math.min(48, 12 + normalizedSize * 36));
+        
+        // Create word element
+        const wordElement = document.createElement('span');
+        wordElement.textContent = word;
+        wordElement.style.cssText = `
+          font-size: ${fontSize}px;
+          font-weight: ${normalizedSize > 0.7 ? '700' : normalizedSize > 0.4 ? '600' : '500'};
+          color: ${colors[i % colors.length]};
+          padding: 4px 8px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          user-select: none;
+          white-space: nowrap;
+        `;
+        
+        // Add hover effect
+        wordElement.addEventListener('mouseenter', function() {
+          this.style.transform = 'scale(1.2)';
+          this.style.textShadow = '2px 2px 4px rgba(0,0,0,0.2)';
+        });
+        
+        wordElement.addEventListener('mouseleave', function() {
+          this.style.transform = 'scale(1)';
+          this.style.textShadow = 'none';
+        });
+        
+        // Show count on click
+        wordElement.title = `"${word}" appears ${count} time${count !== 1 ? 's' : ''}`;
+        
+        display.appendChild(wordElement);
       });
     }
 
-    function renderTrigramChart(data) {
-      destroyChart('trigram-chart');
-      const trigrams = generateTrigrams(data.top_words).slice(0, 10);
-
-      const container = document.getElementById('trigram-container');
+    function renderTimeSeriesChart(data) {
+      destroyChart('timeseries-chart');
+      
+      const container = document.getElementById('timeseries-container');
       if (container) container.classList.add('has-data');
 
-      const ctx = document.getElementById('trigram-chart').getContext('2d');
-      currentCharts['trigram-chart'] = new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels: trigrams.map(t => t.pair),
-          datasets: [{
-            label: 'Frequency',
-            data: trigrams.map(t => t.count),
-            backgroundColor: 'rgba(245, 158, 11, 0.7)',
-            borderColor: '#F59E0B',
-            borderWidth: 2,
-            borderRadius: 6
-          }]
-        },
-        options: chartOptions()
-      });
-    }
-
-    function renderEmotionChart(data) {
-      destroyChart('emotion-chart');
-
-      const container = document.getElementById('emotion-container');
-      if (container) container.classList.add('has-data');
-
-      const emotions = analyzeEmotions(data.all_words || []);
-      const ctx = document.getElementById('emotion-chart').getContext('2d');
-
-      currentCharts['emotion-chart'] = new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-          labels: ['Joy', 'Anger', 'Fear', 'Sadness', 'Neutral'],
-          datasets: [{
-            data: [emotions.joy, emotions.anger, emotions.fear, emotions.sadness, emotions.neutral],
-            backgroundColor: ['#22C55E', '#EF4444', '#A855F7', '#3B82F6', '#94A3B8'],
-            borderWidth: 0
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: { position: 'bottom' }
+      // Simulate document flow by dividing text into segments
+      const allWords = data.all_words || [];
+      const segmentSize = Math.ceil(allWords.length / 20); // 20 time points
+      const topWordsToTrack = data.top_words.slice(0, 5); // Track top 5 words
+      
+      const timeSeriesData = [];
+      const labels = [];
+      
+      // Create time series data for each segment
+      for (let i = 0; i < 20; i++) {
+        const start = i * segmentSize;
+        const end = Math.min((i + 1) * segmentSize, allWords.length);
+        const segment = allWords.slice(start, end);
+        
+        labels.push(`${i * 5}%`);
+        
+        // Count occurrences of each top word in this segment
+        topWordsToTrack.forEach((word, wordIndex) => {
+          if (!timeSeriesData[wordIndex]) {
+            timeSeriesData[wordIndex] = {
+              label: word,
+              data: [],
+              borderColor: ['#0C66E4', '#22C55E', '#F59E0B', '#EF4444', '#A855F7'][wordIndex],
+              backgroundColor: ['rgba(12,102,228,0.1)', 'rgba(34,197,94,0.1)', 'rgba(245,158,11,0.1)', 'rgba(239,68,68,0.1)', 'rgba(168,85,247,0.1)'][wordIndex],
+              borderWidth: 2,
+              fill: true,
+              tension: 0.4,
+              pointRadius: 3
+            };
           }
-        }
-      });
-    }
+          
+          const count = segment.filter(w => w === word).length;
+          timeSeriesData[wordIndex].data.push(count);
+        });
+      }
 
-    function renderTFIDFChart(data) {
-      destroyChart('tfidf-chart');
-
-      const container = document.getElementById('tfidf-container');
-      if (container) container.classList.add('has-data');
-
-      const clusters = simulateTFIDFClusters(data.top_words || []);
-      const ctx = document.getElementById('tfidf-chart').getContext('2d');
-
-      currentCharts['tfidf-chart'] = new Chart(ctx, {
-        type: 'scatter',
+      const ctx = document.getElementById('timeseries-chart').getContext('2d');
+      currentCharts['timeseries-chart'] = new Chart(ctx, {
+        type: 'line',
         data: {
-          datasets: clusters
+          labels: labels,
+          datasets: timeSeriesData
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
           plugins: {
-            legend: { position: 'bottom' }
+            legend: { 
+              position: 'top',
+              labels: { boxWidth: 12, font: { size: 11 } }
+            },
+            title: {
+              display: true,
+              text: 'Word frequency changes throughout the document',
+              font: { size: 12, weight: 'normal' },
+              padding: { bottom: 10 }
+            }
           },
           scales: {
-            x: { title: { display: true, text: 'Component 1' }, grid: { color: '#F1F5F9' } },
-            y: { title: { display: true, text: 'Component 2' }, grid: { color: '#F1F5F9' } }
+            x: {
+              title: { display: true, text: 'Document Progress' },
+              grid: { color: '#F1F5F9' }
+            },
+            y: {
+              beginAtZero: true,
+              title: { display: true, text: 'Frequency in Segment' },
+              grid: { color: '#F1F5F9' }
+            }
           }
         }
       });
     }
 
-    // ========== Helper: Generate N-grams ==========
-    function generateBigrams(words) {
-      const bigrams = {};
-      for (let i = 0; i < words.length - 1; i++) {
-        const pair = words[i] + ' ' + words[i + 1];
-        bigrams[pair] = (bigrams[pair] || 0) + 1;
-      }
-      return Object.entries(bigrams)
-        .map(([pair, count]) => ({ pair, count }))
-        .sort((a, b) => b.count - a.count);
-    }
+    function renderSentimentChart(data) {
+      destroyChart('sentiment-chart');
 
-    function generateTrigrams(words) {
-      const trigrams = {};
-      for (let i = 0; i < words.length - 2; i++) {
-        const pair = words[i] + ' ' + words[i + 1] + ' ' + words[i + 2];
-        trigrams[pair] = (trigrams[pair] || 0) + 1;
-      }
-      return Object.entries(trigrams)
-        .map(([pair, count]) => ({ pair, count }))
-        .sort((a, b) => b.count - a.count);
-    }
+      const container = document.getElementById('sentiment-container');
+      if (container) container.classList.add('has-data');
 
-    function analyzeEmotions(words) {
-      const joyWords = ['happy', 'joy', 'love', 'great', 'excellent', 'wonderful', 'amazing', 'fantastic'];
-      const angerWords = ['angry', 'hate', 'terrible', 'awful', 'furious', 'rage'];
-      const fearWords = ['fear', 'afraid', 'scary', 'worried', 'anxious', 'panic'];
-      const sadnessWords = ['sad', 'depressed', 'miserable', 'unhappy', 'sorrow'];
+      // Comprehensive sentiment word lists
+      const positiveWords = ['good', 'great', 'excellent', 'amazing', 'wonderful', 'fantastic', 'love', 'happy', 
+        'joy', 'beautiful', 'perfect', 'best', 'awesome', 'brilliant', 'outstanding', 'superb', 'delightful',
+        'pleased', 'excited', 'incredible', 'magnificent', 'marvelous', 'positive', 'success', 'successful'];
+      
+      const negativeWords = ['bad', 'terrible', 'awful', 'horrible', 'worst', 'hate', 'angry', 'sad', 'poor',
+        'disappointing', 'disappointed', 'failure', 'failed', 'wrong', 'difficult', 'problem', 'issue',
+        'concern', 'worry', 'worried', 'negative', 'unfortunately', 'never', 'no', 'not'];
+      
+      const neutralWords = ['maybe', 'perhaps', 'possible', 'might', 'could', 'would', 'should', 'about',
+        'approximately', 'generally', 'usually', 'often', 'sometimes', 'can', 'may'];
 
-      let joy = 0, anger = 0, fear = 0, sadness = 0, neutral = 0;
-
-      words.forEach(w => {
-        const word = (w || '').toLowerCase();
-        if (joyWords.includes(word)) joy++;
-        else if (angerWords.includes(word)) anger++;
-        else if (fearWords.includes(word)) fear++;
-        else if (sadnessWords.includes(word)) sadness++;
-        else neutral++;
+      // Categorize all words by sentiment
+      const allWords = data.all_words || [];
+      const sentimentCounts = { positive: [], negative: [], neutral: [] };
+      
+      allWords.forEach(word => {
+        const lowerWord = word.toLowerCase();
+        if (positiveWords.includes(lowerWord)) {
+          sentimentCounts.positive.push(word);
+        } else if (negativeWords.includes(lowerWord)) {
+          sentimentCounts.negative.push(word);
+        } else if (neutralWords.includes(lowerWord)) {
+          sentimentCounts.neutral.push(word);
+        }
       });
 
-      return { joy, anger, fear, sadness, neutral };
+      // Count frequency of each sentiment word
+      const countWords = (wordList) => {
+        const counts = {};
+        wordList.forEach(w => {
+          counts[w] = (counts[w] || 0) + 1;
+        });
+        return Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 15);
+      };
+
+      const positiveCounts = countWords(sentimentCounts.positive);
+      const negativeCounts = countWords(sentimentCounts.negative);
+      const neutralCounts = countWords(sentimentCounts.neutral);
+
+      // Combine all for display (top 10 from each category)
+      const combinedLabels = [
+        ...positiveCounts.slice(0, 10).map(([w]) => w),
+        ...negativeCounts.slice(0, 10).map(([w]) => w),
+        ...neutralCounts.slice(0, 10).map(([w]) => w)
+      ];
+      
+      const combinedData = [
+        ...positiveCounts.slice(0, 10).map(([_, c]) => c),
+        ...negativeCounts.slice(0, 10).map(([_, c]) => c),
+        ...neutralCounts.slice(0, 10).map(([_, c]) => c)
+      ];
+      
+      const combinedColors = [
+        ...Array(Math.min(10, positiveCounts.length)).fill('rgba(34, 197, 94, 0.7)'),
+        ...Array(Math.min(10, negativeCounts.length)).fill('rgba(239, 68, 68, 0.7)'),
+        ...Array(Math.min(10, neutralCounts.length)).fill('rgba(148, 163, 184, 0.7)')
+      ];
+      
+      const combinedBorders = [
+        ...Array(Math.min(10, positiveCounts.length)).fill('#22C55E'),
+        ...Array(Math.min(10, negativeCounts.length)).fill('#EF4444'),
+        ...Array(Math.min(10, neutralCounts.length)).fill('#94A3B8')
+      ];
+
+      const ctx = document.getElementById('sentiment-chart').getContext('2d');
+      currentCharts['sentiment-chart'] = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: combinedLabels,
+          datasets: [{
+            label: 'Word Frequency',
+            data: combinedData,
+            backgroundColor: combinedColors,
+            borderColor: combinedBorders,
+            borderWidth: 2,
+            borderRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          indexAxis: 'y',
+          plugins: {
+            legend: { display: false },
+            title: {
+              display: true,
+              text: `Sentiment Distribution: ${positiveCounts.length} positive, ${negativeCounts.length} negative, ${neutralCounts.length} neutral words found`,
+              font: { size: 12, weight: 'normal' },
+              padding: { bottom: 10 }
+            }
+          },
+          scales: {
+            x: {
+              beginAtZero: true,
+              title: { display: true, text: 'Frequency' },
+              grid: { color: '#F1F5F9' }
+            },
+            y: {
+              grid: { display: false }
+            }
+          }
+        }
+      });
     }
 
-    function simulateTFIDFClusters(words) {
-      const colors = ['#0C66E4', '#22C55E', '#F59E0B', '#EF4444'];
-      const clusters = ['Cluster 1', 'Cluster 2', 'Cluster 3', 'Cluster 4'];
 
-      return clusters.map((label, i) => ({
-        label,
-        data: words.slice(i * 3, (i + 1) * 3).map(() => ({
-          x: Math.random() * 100,
-          y: Math.random() * 100
-        })),
-        backgroundColor: colors[i],
-        pointRadius: 8
+
+
+
+    function renderCoOccurrenceChart(data) {
+      destroyChart('cooccurrence-chart');
+
+      const container = document.getElementById('cooccurrence-container');
+      if (container) container.classList.add('has-data');
+
+      // Build co-occurrence matrix from all words (words appearing near each other)
+      const allWords = data.all_words || [];
+      const topWords = data.top_words.slice(0, 15) || [];
+      const cooccurrences = {};
+      
+      // Count co-occurrences within a window of 5 words
+      const windowSize = 5;
+      for (let i = 0; i < allWords.length; i++) {
+        const word = allWords[i];
+        if (!topWords.includes(word)) continue;
+        
+        for (let j = Math.max(0, i - windowSize); j < Math.min(allWords.length, i + windowSize + 1); j++) {
+          if (i === j) continue;
+          const neighbor = allWords[j];
+          if (!topWords.includes(neighbor)) continue;
+          
+          const key = word < neighbor ? `${word}-${neighbor}` : `${neighbor}-${word}`;
+          cooccurrences[key] = (cooccurrences[key] || 0) + 1;
+        }
+      }
+
+      // Get top 20 co-occurrence pairs
+      const sortedPairs = Object.entries(cooccurrences)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 20);
+
+      // Create network graph data as scatter plot with lines
+      const positions = {};
+      topWords.forEach((word, i) => {
+        const angle = (i / topWords.length) * 2 * Math.PI;
+        const radius = 40;
+        positions[word] = {
+          x: 50 + radius * Math.cos(angle),
+          y: 50 + radius * Math.sin(angle)
+        };
+      });
+
+      // Create datasets for connections (lines) and nodes (points)
+      const connections = [];
+      sortedPairs.forEach(([pair, count]) => {
+        const [word1, word2] = pair.split('-');
+        if (positions[word1] && positions[word2]) {
+          connections.push({
+            word1, word2, count,
+            x1: positions[word1].x, y1: positions[word1].y,
+            x2: positions[word2].x, y2: positions[word2].y
+          });
+        }
+      });
+
+      const nodes = topWords.map(word => ({
+        x: positions[word].x,
+        y: positions[word].y,
+        r: 8,
+        word: word
       }));
+
+      const ctx = document.getElementById('cooccurrence-chart').getContext('2d');
+      
+      // Draw connections manually before creating chart
+      ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+      
+      currentCharts['cooccurrence-chart'] = new Chart(ctx, {
+        type: 'scatter',
+        data: {
+          datasets: [{
+            label: 'Words',
+            data: nodes,
+            backgroundColor: '#0C66E4',
+            borderColor: '#fff',
+            borderWidth: 2,
+            pointRadius: 10,
+            pointHoverRadius: 12
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  return context.raw.word;
+                }
+              }
+            },
+            title: {
+              display: true,
+              text: `Shows which words frequently appear together (${sortedPairs.length} connections found)`,
+              font: { size: 12, weight: 'normal' },
+              padding: { bottom: 10 }
+            }
+          },
+          scales: {
+            x: { display: false, min: -10, max: 110 },
+            y: { display: false, min: -10, max: 110 }
+          }
+        },
+        plugins: [{
+          id: 'connectionLines',
+          beforeDraw: (chart) => {
+            const ctx = chart.ctx;
+            const xAxis = chart.scales.x;
+            const yAxis = chart.scales.y;
+            
+            connections.forEach(conn => {
+              const x1 = xAxis.getPixelForValue(conn.x1);
+              const y1 = yAxis.getPixelForValue(conn.y1);
+              const x2 = xAxis.getPixelForValue(conn.x2);
+              const y2 = yAxis.getPixelForValue(conn.y2);
+              
+              ctx.save();
+              ctx.strokeStyle = 'rgba(148, 163, 184, 0.3)';
+              ctx.lineWidth = Math.min(4, conn.count / 2);
+              ctx.beginPath();
+              ctx.moveTo(x1, y1);
+              ctx.lineTo(x2, y2);
+              ctx.stroke();
+              ctx.restore();
+            });
+          }
+        }]
+      });
+    }
+
+    function renderZipfChart(data) {
+      destroyChart('zipf-chart');
+
+      const container = document.getElementById('zipf-container');
+      if (container) container.classList.add('has-data');
+
+      // Zipf's Law: frequency ~ 1/rank
+      // Use top 100 words for better visualization
+      const words = data.top_words.slice(0, 100) || [];
+      const counts = data.top_counts.slice(0, 100) || [];
+      
+      if (words.length === 0) return;
+      
+      // Calculate ranks and log values
+      const ranks = words.map((_, i) => i + 1);
+      const logRanks = ranks.map(r => Math.log10(r));
+      const logFreqs = counts.map(c => Math.log10(c));
+      
+      // Calculate ideal Zipf line (best fit)
+      const maxFreq = counts[0];
+      const idealZipf = ranks.map(r => Math.log10(maxFreq / r));
+
+      const ctx = document.getElementById('zipf-chart').getContext('2d');
+      currentCharts['zipf-chart'] = new Chart(ctx, {
+        type: 'scatter',
+        data: {
+          datasets: [
+            {
+              label: 'Actual Distribution',
+              data: logRanks.map((x, i) => ({ x, y: logFreqs[i], word: words[i] })),
+              backgroundColor: '#0C66E4',
+              borderColor: '#0C66E4',
+              pointRadius: 4,
+              pointHoverRadius: 6,
+              showLine: true,
+              fill: false
+            },
+            {
+              label: 'Ideal Zipf Distribution',
+              data: logRanks.map((x, i) => ({ x, y: idealZipf[i] })),
+              backgroundColor: '#EF4444',
+              borderColor: '#EF4444',
+              borderDash: [5, 5],
+              pointRadius: 0,
+              showLine: true,
+              fill: false,
+              borderWidth: 2
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'top' },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  if (context.raw.word) {
+                    return `${context.raw.word}: rank ${Math.round(Math.pow(10, context.raw.x))}, freq ${Math.round(Math.pow(10, context.raw.y))}`;
+                  }
+                  return `Ideal Zipf`;
+                }
+              }
+            },
+            title: {
+              display: true,
+              text: 'Zipf\'s Law: word frequency vs. rank (log-log scale)',
+              font: { size: 12, weight: 'normal' },
+              padding: { bottom: 10 }
+            }
+          },
+          scales: {
+            x: {
+              title: { display: true, text: 'Log(Rank)' },
+              grid: { color: '#F1F5F9' }
+            },
+            y: {
+              title: { display: true, text: 'Log(Frequency)' },
+              grid: { color: '#F1F5F9' }
+            }
+          }
+        }
+      });
     }
 
     // ========== Raw Data Table ==========
@@ -3136,7 +3615,7 @@
         btn.innerHTML = '<span>🚀</span><span>Start Spark Session</span>';
         if (!resp.ok) {
           const data = await resp.json();
-          showSparkError(data.error || 'Failed to start Spark');
+          showSparkError(data.error || 'Failed to start Spark', data.hint || null);
         }
         updateSparkStatus();
       } catch (e) {
@@ -3200,10 +3679,14 @@
       }
     }
 
-    function showSparkError(msg) {
+    function showSparkError(msg, hint = null) {
       const errBox = document.getElementById('spark-error-box');
       if (errBox) {
-        errBox.textContent = msg;
+        let content = msg;
+        if (hint) {
+          content += '<br><br><strong>Setup Hint:</strong><br>' + hint;
+        }
+        errBox.innerHTML = content;
         errBox.classList.remove('hidden');
       }
     }
@@ -3213,6 +3696,10 @@
         const resp = await fetch('/api/spark/status?ts=' + Date.now(), { cache: 'no-store' });
         if (!resp.ok) throw new Error('Status fetch failed');
         const data = await resp.json();
+        const startBtn = document.getElementById('spark-start-btn');
+        const stopBtn = document.getElementById('spark-stop-btn');
+        const refreshBtn = document.getElementById('spark-refresh-btn');
+        const openBtn = document.getElementById('spark-open-btn');
         // Update cards
         setKPI('spark-active', data.active ? 'Yes' : 'No');
         setKPI('spark-running-jobs', data.running_jobs);
@@ -3221,6 +3708,25 @@
         setKPI('spark-last-runtime', data.last_job_runtime || '—');
         const safeUrl = sanitizeSparkURL(data.spark_ui_url);
         setSparkIframe(safeUrl);
+        if (data.available === false) {
+          const setupSteps = `
+            <strong>PySpark is not installed.</strong><br><br>
+            To enable Spark features:<br>
+            1. Install Java JDK 17+ and set JAVA_HOME environment variable<br>
+            2. Install PySpark: <code style="background:#f1f5f9;padding:2px 6px;border-radius:3px;">pip install pyspark</code><br>
+            3. Restart the application<br>
+          `;
+          showSparkError(setupSteps);
+          if (startBtn) startBtn.disabled = true;
+          if (stopBtn) stopBtn.disabled = true;
+          if (refreshBtn) refreshBtn.disabled = true;
+          if (openBtn) openBtn.disabled = true;
+          return; // Do not proceed to active session logic
+        } else {
+          if (startBtn) startBtn.disabled = false;
+          if (refreshBtn) refreshBtn.disabled = false;
+          // stopBtn enabled only when active
+        }
         // If active but cannot embed, show fallback open link
         if (data.active && !safeUrl) {
           const openFallback = document.getElementById('spark-open-fallback');
@@ -3230,6 +3736,7 @@
           if (openBtn) openBtn.disabled = false;
           if (openLink && data.spark_ui_url) openLink.href = data.spark_ui_url;
         }
+        if (stopBtn) stopBtn.disabled = !data.active;
         if (!data.active) {
           showSparkError('No active Spark session detected.');
         } else {
@@ -3347,6 +3854,15 @@
         const response = await fetch('/api/history');
         if (response.ok) {
           historyRecords = await response.json();
+          if (!Array.isArray(historyRecords)) {
+            historyRecords = [];
+          }
+          // Sort newest first by stored_at if present
+          historyRecords.sort((a, b) => {
+            const da = new Date(a.stored_at || 0).getTime();
+            const db = new Date(b.stored_at || 0).getTime();
+            return db - da;
+          });
           filterHistoryRecords();
         } else {
           console.error('Failed to load history:', response.statusText);
@@ -3404,6 +3920,10 @@
     function renderHistoryTable() {
       const tbody = document.getElementById('history-table-body');
       if (!tbody) return;
+
+      // Clear any prior error indicator if we successfully reached here
+      const errorBanner = document.getElementById('history-error-banner');
+      if (errorBanner) errorBanner.classList.add('hidden');
 
       if (filteredHistoryRecords.length === 0) {
         tbody.innerHTML = `

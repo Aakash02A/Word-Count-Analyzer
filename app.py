@@ -2,7 +2,7 @@ import re
 from flask import Flask, request, jsonify, send_file, render_template
 import os
 import json
-import pandas as pd
+import csv
 from datetime import datetime
 from collections import Counter
 import requests
@@ -60,17 +60,18 @@ def extract_text_from_file(filepath, file_extension):
             text += page.extract_text() + '\n'
         return text
     elif file_extension == '.csv':
-        # Read CSV using pandas and flatten to a whitespace-separated string
+        # Read CSV using csv module and flatten to a whitespace-separated string
         try:
-            df = pd.read_csv(filepath, dtype=str, encoding='utf-8', engine='python')
+            with open(filepath, 'r', encoding='utf-8', newline='', errors='ignore') as csvfile:
+                reader = csv.reader(csvfile)
+                rows = []
+                for row in reader:
+                    rows.append(' '.join(str(cell) for cell in row if cell))
+                return '\n'.join(rows)
         except Exception:
-            # Fallback attempts
-            try:
-                df = pd.read_csv(filepath, dtype=str, encoding_errors='ignore', engine='python')
-            except Exception:
-                df = pd.read_csv(filepath, dtype=str)
-        df = df.fillna('')
-        return '\n'.join(' '.join(row) for row in df.astype(str).values)
+            # Fallback if any error
+            with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
+                return f.read()
     elif file_extension == '.html' or file_extension == '.htm':
         # Strip HTML tags to plain text
         with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
@@ -312,10 +313,13 @@ def analyze():
 
             # Save CSV file for download (with all words)
             try:
-                df = pd.DataFrame({"Word": all_words_list, "Count": all_counts_list})
                 csv_name = f"{os.path.splitext(safe_filename)[0]}_analysis.csv"
                 csv_path = os.path.join(app.config['UPLOAD_FOLDER'], csv_name)
-                df.to_csv(csv_path, index=False)
+                with open(csv_path, 'w', newline='', encoding='utf-8') as csvfile:
+                    writer = csv.writer(csvfile)
+                    writer.writerow(['Word', 'Count'])
+                    for word, count in zip(all_words_list, all_counts_list):
+                        writer.writerow([word, count])
             except Exception as e:
                 app.logger.error(f"Error writing CSV file: {e}")
                 return jsonify({"error": f"Error writing CSV file: {e}"}), 500
@@ -588,6 +592,13 @@ def delete_history_record(record_id):
 def spark_start():
     if not SPARK_AVAILABLE:
         return jsonify({"error": "PySpark not available in this environment"}), 400
+    # Validate Java availability for Spark on Windows
+    java_home = os.environ.get('JAVA_HOME')
+    if os.name == 'nt' and not java_home:
+        return jsonify({
+            "error": "JAVA_HOME is not set. Install Java (JDK) and set JAVA_HOME to enable Spark.",
+            "hint": "Example: setx JAVA_HOME \"C:\\Program Files\\Java\\jdk-17\""
+        }), 400
     global spark_session
     if spark_session is not None:
         try:
@@ -619,6 +630,7 @@ def spark_stop():
 def spark_status():
     if not SPARK_AVAILABLE:
         return jsonify({
+            "available": False,
             "active": False,
             "running_jobs": 0,
             "completed_jobs": 0,
@@ -659,6 +671,7 @@ def spark_status():
     except Exception as e:
         app.logger.error(f"Spark status error: {e}")
     return jsonify({
+        "available": True,
         "active": active,
         "running_jobs": running_jobs,
         "completed_jobs": completed_jobs,
@@ -666,6 +679,17 @@ def spark_status():
         "last_job_runtime": last_spark_job_runtime,
         "spark_ui_url": spark_ui_url
     })
+
+@app.route('/api/health', methods=['GET'])
+def health():
+    """Simple health check endpoint for end-to-end tests."""
+    try:
+        return jsonify({
+            "status": "ok",
+            "spark_available": SPARK_AVAILABLE
+        })
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 if __name__ == '__main__':
     # Disable debug to improve Spark session stability
