@@ -1,0 +1,4300 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Word Intelligence & PySpark Analytics Platform</title>
+    <style>
+        /* ============================================================================
+   RESET & BASE STYLES
+   ============================================================================ */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            font-size: 16px;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+                'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+                sans-serif;
+            background-color: #FFFFFF;
+            color: #1E293B;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* ============================================================================
+   TYPOGRAPHY
+   ============================================================================ */
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6 {
+            font-weight: 600;
+            line-height: 1.2;
+            margin-bottom: 0.5rem;
+        }
+
+        h1 {
+            font-size: 2rem;
+        }
+
+        h2 {
+            font-size: 1.75rem;
+        }
+
+        h3 {
+            font-size: 1.25rem;
+        }
+
+        h4 {
+            font-size: 1.125rem;
+        }
+
+        p {
+            margin-bottom: 1rem;
+        }
+
+        .text-muted {
+            color: #64748B;
+            font-size: 0.95rem;
+        }
+
+        /* ============================================================================
+   BUTTONS
+   ============================================================================ */
+        button {
+            cursor: pointer;
+            border: none;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            white-space: nowrap;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-primary {
+            background-color: #0C66E4;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: #0952B8;
+        }
+
+        .btn-secondary {
+            background-color: #F1F5F9;
+            color: #1E293B;
+            border: 1px solid #E2E8F0;
+        }
+
+        .btn-secondary:hover {
+            background-color: #E8EEF5;
+            border-color: #CBD5E1;
+        }
+
+        .btn-sm {
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+        }
+
+        .btn-block {
+            width: 100%;
+        }
+
+        .btn-link {
+            background: none;
+            border: none;
+            color: #0C66E4;
+            padding: 0;
+            text-decoration: underline;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: inherit;
+        }
+
+        .btn-link:hover {
+            color: #0952B8;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* ============================================================================
+   TOP ACTION BAR - SaaS DESIGN
+   ============================================================================ */
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 3rem;
+            background: linear-gradient(135deg, #FFFFFF 0%, #F8FAFC 100%);
+            border-bottom: 1px solid #E2E8F0;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            height: 72px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .top-bar-left {
+            display: flex;
+            align-items: center;
+            flex: 1;
+        }
+
+        .platform-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #0C66E4;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin: 0;
+            letter-spacing: -0.5px;
+        }
+
+        .platform-title .icon {
+            font-size: 1.6rem;
+            color: #0C66E4;
+        }
+
+        .top-bar-right {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .top-bar-right .btn {
+            padding: 0.7rem 1.5rem;
+            font-size: 0.9rem;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+
+        .top-bar-right .btn-secondary {
+            background: #F1F5F9;
+            color: #0C66E4;
+            border: 1px solid #E2E8F0;
+        }
+
+        .top-bar-right .btn-secondary:hover {
+            background: #E8EEF5;
+            border-color: #CBD5E1;
+            box-shadow: 0 2px 4px rgba(12, 102, 228, 0.1);
+        }
+
+        .top-bar-right .btn-primary {
+            background: #0C66E4;
+            color: white;
+            border: none;
+        }
+
+        .top-bar-right .btn-primary:hover {
+            background: #0952B8;
+            box-shadow: 0 4px 8px rgba(12, 102, 228, 0.2);
+            transform: translateY(-1px);
+        }
+
+        /* ============================================================================
+   LAYOUT
+   ============================================================================ */
+        .main-container {
+            display: flex;
+            height: calc(100vh - 80px);
+            overflow: hidden;
+        }
+
+        /* ============================================================================
+   SIDEBAR NAVIGATION
+   ============================================================================ */
+        .sidebar {
+            width: 280px;
+            background-color: #F8FAFC;
+            border-right: 1px solid #E2E8F0;
+            padding: 1.5rem 0;
+            overflow-y: auto;
+            flex-shrink: 0;
+        }
+
+        .nav-menu {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem 1.5rem;
+            background: transparent;
+            color: #64748B;
+            border: none;
+            border-left: 3px solid transparent;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.95rem;
+            font-weight: 500;
+        }
+
+        .nav-item:hover {
+            background-color: #E8EEF5;
+            color: #0C66E4;
+        }
+
+        .nav-item.active {
+            background-color: #E8EEF5;
+            color: #0C66E4;
+            border-left-color: #0C66E4;
+        }
+
+        .nav-icon {
+            font-size: 1.25rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .nav-label {
+            flex: 1;
+            text-align: left;
+        }
+
+        /* ============================================================================
+   MAIN CONTENT AREA
+   ============================================================================ */
+        .content-area {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+
+        .panel {
+            display: none;
+            width: 100%;
+            height: 100%;
+            overflow-y: auto;
+            padding: 2rem;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .panel.active {
+            display: flex;
+            flex-direction: column;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .panel-header {
+            margin-bottom: 2rem;
+        }
+
+        .panel-header h2 {
+            margin-bottom: 0.5rem;
+        }
+
+        /* ============================================================================
+   CARDS & CONTAINERS
+   ============================================================================ */
+        .card {
+            background-color: #FFFFFF;
+            border: 1px solid #E2E8F0;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            border-color: #CBD5E1;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .card-header h3 {
+            margin: 0;
+        }
+
+        .card-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #0C66E4;
+            margin: 1rem 0;
+        }
+
+        .card-footer {
+            font-size: 0.875rem;
+            color: #64748B;
+        }
+
+        /* ============================================================================
+   SUMMARY CARDS GRID
+   ============================================================================ */
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .summary-card {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .summary-card .icon.large {
+            font-size: 2rem;
+        }
+
+        .summary-card .label {
+            font-weight: 500;
+            color: #64748B;
+            font-size: 0.9rem;
+        }
+
+        /* ============================================================================
+   STATS SECTION
+   ============================================================================ */
+        .stats-section {
+            background-color: #FFFFFF;
+            border: 1px solid #E2E8F0;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            padding: 1rem;
+            background-color: #F8FAFC;
+            border-radius: 8px;
+            border: 1px solid #E2E8F0;
+        }
+
+        .stat-item label {
+            font-size: 0.875rem;
+            color: #64748B;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .stat-item value {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #1E293B;
+        }
+
+        /* ============================================================================
+   CHARTS SECTION
+   ============================================================================ */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .chart-card {
+            min-height: 350px;
+        }
+
+        .chart-placeholder {
+            width: 100%;
+            height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #F8FAFC;
+            border-radius: 8px;
+            padding: 1rem;
+        }
+
+        .bar-chart {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Bigrams List */
+        .bigram-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .bigram-item {
+            display: grid;
+            grid-template-columns: 1fr 2fr 0.5fr;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .bigram-text {
+            font-size: 0.95rem;
+            font-weight: 500;
+            color: #1E293B;
+        }
+
+        .bigram-bar {
+            height: 24px;
+            background-color: #E8EEF5;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .bigram-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #0C66E4 0%, #1D7AFC 100%);
+            border-radius: 4px;
+        }
+
+        .bigram-count {
+            text-align: right;
+            font-weight: 600;
+            color: #0C66E4;
+            font-size: 0.9rem;
+        }
+
+        /* Trigrams List */
+        .trigram-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .trigram-item {
+            padding: 1rem;
+            background-color: #F8FAFC;
+            border-radius: 8px;
+            border-left: 4px solid #0C66E4;
+            font-weight: 500;
+            color: #1E293B;
+        }
+
+        /* Emotion Chart */
+        .emotion-chart {
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .emotion-item {
+            display: grid;
+            grid-template-columns: 100px 1fr 60px;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .emotion-label {
+            font-size: 0.95rem;
+            font-weight: 500;
+            color: #1E293B;
+        }
+
+        .emotion-bar {
+            height: 20px;
+            background-color: #E8EEF5;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .emotion-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #7C3AED 0%, #A78BFA 100%);
+        }
+
+        .emotion-value {
+            text-align: right;
+            font-weight: 600;
+            color: #7C3AED;
+        }
+
+        /* Topic Bubbles */
+        .topic-cluster {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2rem;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .topic-bubble {
+            background: linear-gradient(135deg, #0C66E4 0%, #1D7AFC 100%);
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(12, 102, 228, 0.2);
+            transition: transform 0.3s ease;
+        }
+
+        .topic-bubble:hover {
+            transform: scale(1.1);
+        }
+
+        .topic-label {
+            font-size: 0.85rem;
+            text-align: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .topic-score {
+            font-size: 0.9rem;
+        }
+
+        /* ============================================================================
+   PYSPARK EXECUTION SECTION
+   ============================================================================ */
+        .spark-status-bar {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+            background-color: #F8FAFC;
+            border: 1px solid #E2E8F0;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .status-label {
+            font-weight: 500;
+            color: #64748B;
+            min-width: 120px;
+        }
+
+        .status-badge {
+            display: inline-block;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        .badge.idle {
+            background-color: #F1F5F9;
+            color: #64748B;
+        }
+
+        .badge.running {
+            background-color: #FEF08A;
+            color: #854D0E;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        .badge.succeeded {
+            background-color: #DCFCE7;
+            color: #166534;
+        }
+
+        .badge.failed {
+            background-color: #FEE2E2;
+            color: #991B1B;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.7;
+            }
+        }
+
+        .health-indicator {
+            font-size: 1.25rem;
+            margin-right: 0.5rem;
+        }
+
+        .health-indicator.green {
+            color: #16A34A;
+        }
+
+        .health-indicator.yellow {
+            color: #EAB308;
+        }
+
+        .health-indicator.red {
+            color: #DC2626;
+        }
+
+        .status-value {
+            font-weight: 600;
+            color: #1E293B;
+        }
+
+        .status-text {
+            font-weight: 500;
+            color: #64748B;
+        }
+
+        /* Progress Section */
+        .progress-section {
+            background-color: #FFFFFF;
+            border: 1px solid #E2E8F0;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .progress-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        .progress-label {
+            font-weight: 500;
+            color: #1E293B;
+        }
+
+        .progress-percentage {
+            font-weight: 600;
+            color: #0C66E4;
+        }
+
+        .progress-bar {
+            height: 24px;
+            background-color: #E8EEF5;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid #CBD5E1;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #0C66E4 0%, #1D7AFC 100%);
+            border-radius: 12px;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        /* Metrics Grid */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .metric-card {
+            background-color: #FFFFFF;
+            border: 1px solid #E2E8F0;
+            border-radius: 8px;
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .metric-label {
+            font-size: 0.85rem;
+            color: #64748B;
+            font-weight: 500;
+            margin-bottom: 0.75rem;
+        }
+
+        .metric-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #0C66E4;
+        }
+
+        /* DAG Section */
+        .dag-section {
+            background-color: #FFFFFF;
+            border: 1px solid #E2E8F0;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .dag-section h3 {
+            margin-bottom: 1.5rem;
+        }
+
+        .dag-container {
+            overflow-x: auto;
+            background-color: #F8FAFC;
+            border-radius: 8px;
+            padding: 1rem;
+        }
+
+        .dag-svg {
+            width: 100%;
+            min-height: 400px;
+        }
+
+        /* ============================================================================
+   RAW DATA TABLE
+   ============================================================================ */
+        .data-controls {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            align-items: flex-end;
+        }
+
+        .search-box {
+            flex: 1;
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 1rem;
+            font-size: 1.1rem;
+            color: #94A3B8;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 0.75rem 1rem 0.75rem 2.75rem;
+            border: 1px solid #E2E8F0;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            transition: border-color 0.2s ease;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #0C66E4;
+            box-shadow: 0 0 0 3px rgba(12, 102, 228, 0.1);
+        }
+
+        .filter-controls {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .select-control {
+            padding: 0.75rem 1rem;
+            border: 1px solid #E2E8F0;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            background-color: #FFFFFF;
+            cursor: pointer;
+            transition: border-color 0.2s ease;
+        }
+
+        .select-control:focus {
+            outline: none;
+            border-color: #0C66E4;
+        }
+
+        .table-container {
+            background-color: #FFFFFF;
+            border: 1px solid #E2E8F0;
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 1.5rem;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .data-table thead {
+            background-color: #F8FAFC;
+            border-bottom: 2px solid #E2E8F0;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .data-table th {
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            color: #1E293B;
+            font-size: 0.9rem;
+        }
+
+        .data-table tbody tr {
+            border-bottom: 1px solid #E2E8F0;
+            transition: background-color 0.2s ease;
+        }
+
+        .data-table tbody tr:hover {
+            background-color: #F8FAFC;
+        }
+
+        .data-table tbody tr:nth-child(even) {
+            background-color: #FFFFFF;
+        }
+
+        .data-table td {
+            padding: 1rem;
+            font-size: 0.95rem;
+            color: #1E293B;
+        }
+
+        .col-word {
+            width: 30%;
+            font-weight: 500;
+        }
+
+        .col-frequency {
+            width: 25%;
+            text-align: center;
+        }
+
+        .col-normalized {
+            width: 25%;
+            text-align: center;
+        }
+
+        .col-length {
+            width: 20%;
+            text-align: center;
+        }
+
+        /* Pagination */
+        .pagination-controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 1rem;
+            padding: 1.5rem;
+            background-color: #F8FAFC;
+            border-top: 1px solid #E2E8F0;
+        }
+
+        .pagination-info {
+            font-weight: 500;
+            color: #64748B;
+        }
+
+        /* ============================================================================
+   FILE UPLOAD SECTION
+   ============================================================================ */
+        .upload-container {
+            background-color: #FFFFFF;
+            border: 1px solid #E2E8F0;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .upload-zone {
+            border: 2px dashed #CBD5E1;
+            border-radius: 12px;
+            padding: 3rem 2rem;
+            text-align: center;
+            background-color: #F8FAFC;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .upload-zone:hover {
+            border-color: #0C66E4;
+            background-color: #E8EEF5;
+        }
+
+        .upload-zone.dragover {
+            border-color: #0C66E4;
+            background-color: #E8EEF5;
+        }
+
+        .upload-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .upload-zone h3 {
+            margin: 1rem 0;
+        }
+
+        .upload-zone p {
+            color: #64748B;
+            margin: 0.5rem 0;
+        }
+
+        .upload-hint {
+            font-size: 0.85rem;
+            color: #94A3B8;
+            margin-top: 1rem;
+        }
+
+        /* Upload Progress */
+        .upload-progress {
+            padding: 1.5rem;
+            border: 1px solid #E2E8F0;
+            border-radius: 8px;
+            background-color: #F8FAFC;
+        }
+
+        .upload-status {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            padding: 1.5rem;
+            background-color: #DCFCE7;
+            border: 1px solid #86EFAC;
+            border-radius: 8px;
+        }
+
+        .status-icon {
+            font-size: 2rem;
+        }
+
+        .status-content {
+            flex: 1;
+        }
+
+        .status-content h4 {
+            margin: 0 0 0.5rem 0;
+            color: #166534;
+        }
+
+        .status-content p {
+            margin: 0.25rem 0;
+            color: #16A34A;
+            font-size: 0.95rem;
+        }
+
+        .status-details {
+            font-size: 0.85rem;
+            color: #65A30D;
+            margin-top: 0.5rem;
+        }
+
+        /* Upload History */
+        .history-section {
+            margin-top: 2rem;
+        }
+
+        .history-section h3 {
+            margin-bottom: 1.5rem;
+        }
+
+        .upload-history {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5rem;
+            background-color: #F8FAFC;
+            border: 1px solid #E2E8F0;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .history-item:hover {
+            background-color: #E8EEF5;
+            border-color: #CBD5E1;
+        }
+
+        .history-info {
+            flex: 1;
+        }
+
+        .history-name {
+            font-weight: 600;
+            color: #1E293B;
+            margin-bottom: 0.25rem;
+        }
+
+        .history-meta {
+            font-size: 0.85rem;
+            color: #64748B;
+        }
+
+        /* ============================================================================
+   URL ANALYZER SECTION
+   ============================================================================ */
+        .url-form {
+            background-color: #FFFFFF;
+            border: 1px solid #E2E8F0;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .input-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #1E293B;
+        }
+
+        .text-input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid #E2E8F0;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            transition: border-color 0.2s ease;
+        }
+
+        .text-input:focus {
+            outline: none;
+            border-color: #0C66E4;
+            box-shadow: 0 0 0 3px rgba(12, 102, 228, 0.1);
+        }
+
+        /* URL Results */
+        .url-results {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .result-card {
+            background-color: #FFFFFF;
+            border: 1px solid #E2E8F0;
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+
+        .result-card h3 {
+            margin-bottom: 1.5rem;
+        }
+
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #E2E8F0;
+        }
+
+        .result-item:last-child {
+            border-bottom: none;
+        }
+
+        .result-item label {
+            font-weight: 500;
+            color: #64748B;
+        }
+
+        .result-item value {
+            font-weight: 600;
+            color: #1E293B;
+        }
+
+        /* ============================================================================
+   MODALS
+   ============================================================================ */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background-color: #FFFFFF;
+            border-radius: 16px;
+            box-shadow: 0 20px 25px rgba(0, 0, 0, 0.15);
+            width: 90%;
+            max-width: 500px;
+            overflow: hidden;
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5rem;
+            border-bottom: 1px solid #E2E8F0;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: #94A3B8;
+            cursor: pointer;
+            transition: color 0.2s ease;
+        }
+
+        .modal-close:hover {
+            color: #1E293B;
+        }
+
+        .modal-body {
+            padding: 2rem;
+        }
+
+        .upload-zone-modal {
+            border: 2px dashed #CBD5E1;
+            border-radius: 12px;
+            padding: 2rem;
+            text-align: center;
+            background-color: #F8FAFC;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .upload-zone-modal:hover {
+            border-color: #0C66E4;
+            background-color: #E8EEF5;
+        }
+
+        .upload-zone-modal .upload-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        /* ============================================================================
+   RESPONSIVE DESIGN
+   ============================================================================ */
+        @media (max-width: 1200px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .top-bar {
+                flex-direction: column;
+                height: auto;
+                gap: 1rem;
+                padding: 1rem;
+            }
+
+            .top-bar-right {
+                width: 100%;
+            }
+
+            .top-bar-right .btn {
+                flex: 1;
+                justify-content: center;
+            }
+
+            .main-container {
+                flex-direction: column;
+                height: auto;
+            }
+
+            .sidebar {
+                width: 100%;
+                border-right: none;
+                border-bottom: 1px solid #E2E8F0;
+                padding: 1rem 0;
+            }
+
+            .nav-menu {
+                flex-direction: row;
+                overflow-x: auto;
+            }
+
+            .nav-item {
+                padding: 1rem;
+                border-left: none;
+                border-bottom: 3px solid transparent;
+            }
+
+            .nav-item.active {
+                border-left: none;
+                border-bottom-color: #0C66E4;
+            }
+
+            .content-area {
+                height: auto;
+            }
+
+            .panel {
+                padding: 1rem;
+            }
+
+            .summary-cards {
+                grid-template-columns: 1fr;
+            }
+
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .spark-status-bar {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+
+            .metrics-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .data-controls {
+                flex-direction: column;
+            }
+
+            .filter-controls {
+                width: 100%;
+                flex-direction: column;
+            }
+
+            .select-control {
+                width: 100%;
+            }
+
+            .data-table {
+                font-size: 0.85rem;
+            }
+
+            .data-table th,
+            .data-table td {
+                padding: 0.75rem 0.5rem;
+            }
+
+            .platform-title {
+                font-size: 1.25rem;
+            }
+
+            .url-results {
+                grid-template-columns: 1fr;
+            }
+
+            .topic-cluster {
+                gap: 1rem;
+            }
+
+            .topic-bubble {
+                width: 70px;
+                height: 70px;
+            }
+
+            .topic-label {
+                font-size: 0.75rem;
+            }
+
+            .topic-score {
+                font-size: 0.8rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .platform-title {
+                font-size: 1rem;
+            }
+
+            .platform-title .icon {
+                display: none;
+            }
+
+            .metrics-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .bigram-item {
+                grid-template-columns: 1fr;
+            }
+
+            .bigram-count {
+                text-align: left;
+            }
+
+            .emotion-item {
+                grid-template-columns: 1fr;
+            }
+
+            .emotion-value {
+                text-align: left;
+            }
+
+            .status-item {
+                gap: 0.25rem;
+            }
+
+            .status-label {
+                min-width: auto;
+                font-size: 0.85rem;
+            }
+
+            .modal-content {
+                width: 95%;
+            }
+        }
+
+        /* ============================================================================
+   SCROLLBAR STYLING
+   ============================================================================ */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #F1F5F9;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #CBD5E1;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94A3B8;
+        }
+
+        /* ============================================================================
+   HOME PAGE STYLES
+   ============================================================================ */
+        #panel-home {
+            padding: 3rem !important;
+            background-color: #F8FAFC !important;
+        }
+
+        .home-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 3rem;
+            gap: 3rem;
+        }
+
+        .home-header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .home-stats {
+            display: flex;
+            gap: 2rem;
+            flex-shrink: 0;
+        }
+
+        .stat-badge {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            border: 1px solid #E2E8F0;
+            text-align: center;
+            min-width: 140px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .stat-number {
+            display: block;
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #0C66E4;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            display: block;
+            font-size: 0.85rem;
+            color: #64748B;
+            font-weight: 500;
+        }
+
+        .home-cards-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .home-card {
+            background: white;
+            padding: 2.5rem 2rem;
+            border-radius: 12px;
+            border: 1px solid #E2E8F0;
+            text-align: center;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+
+        .home-card:hover {
+            border-color: #CBD5E1;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .home-card-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .home-card h3 {
+            font-size: 1.25rem;
+            margin-bottom: 0.75rem;
+            color: #1E293B;
+        }
+
+        .home-card p {
+            color: #64748B;
+            font-size: 0.95rem;
+            margin-bottom: 1.5rem;
+            line-height: 1.5;
+        }
+
+        .home-features {
+            background: white;
+            padding: 3rem;
+            border-radius: 12px;
+            border: 1px solid #E2E8F0;
+        }
+
+        .home-features h2 {
+            margin-bottom: 2rem;
+            font-size: 1.75rem;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 2rem;
+        }
+
+        .feature-box {
+            padding: 1.5rem;
+            background: #F8FAFC;
+            border-radius: 8px;
+            border-left: 4px solid #0C66E4;
+        }
+
+        .feature-icon {
+            font-size: 2rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .feature-box h4 {
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+            color: #1E293B;
+        }
+
+        .feature-box p {
+            color: #64748B;
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+
+        @media (max-width: 1024px) {
+            .home-header {
+                flex-direction: column;
+            }
+
+            .home-cards-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            #panel-home {
+                padding: 1.5rem !important;
+            }
+
+            .home-header {
+                margin-bottom: 2rem;
+            }
+
+            .home-stats {
+                flex-direction: column;
+                width: 100%;
+            }
+
+            .stat-badge {
+                width: 100%;
+            }
+
+            .home-cards-grid {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+                margin-bottom: 2rem;
+            }
+
+            .home-features {
+                padding: 1.5rem;
+            }
+        }
+
+        /* ============================================================================
+   DASHBOARD STYLES
+   ============================================================================ */
+        #panel-dashboard {
+            padding: 2rem !important;
+            background-color: #F8FAFC !important;
+        }
+
+        .dashboard-header {
+            margin-bottom: 2.5rem;
+        }
+
+        .dashboard-header h1 {
+            font-size: 2rem;
+            color: #1E293B;
+        }
+
+        .dashboard-stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 1.75rem;
+            border-radius: 12px;
+            border: 1px solid #E2E8F0;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            text-align: center;
+        }
+
+        .stat-card-label {
+            font-size: 0.9rem;
+            color: #64748B;
+            font-weight: 500;
+            margin-bottom: 0.75rem;
+        }
+
+        .stat-card-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #0C66E4;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .dashboard-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            border: 1px solid #E2E8F0;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .dashboard-card h3 {
+            font-size: 1.25rem;
+            margin-bottom: 1.5rem;
+            color: #1E293B;
+        }
+
+        .analyses-table {
+            background: #F8FAFC;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .table-header {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 1rem;
+            padding: 1rem;
+            background: #F1F5F9;
+            border-bottom: 1px solid #E2E8F0;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: #475569;
+        }
+
+        .table-col {
+            text-align: left;
+        }
+
+        .table-body {
+            padding: 2rem 1rem;
+            text-align: center;
+            color: #94A3B8;
+        }
+
+        .table-empty {
+            font-size: 0.95rem;
+        }
+
+        .health-status {
+            background: #F8FAFC;
+            padding: 1.5rem;
+            border-radius: 8px;
+        }
+
+        .health-indicator {
+            font-size: 1rem;
+            margin-bottom: 1rem;
+            padding: 0.75rem;
+            background: #DCFCE7;
+            color: #15803D;
+            border-radius: 6px;
+            font-weight: 500;
+        }
+
+        .health-item {
+            font-size: 0.95rem;
+            color: #475569;
+            margin-bottom: 0.75rem;
+            padding: 0.5rem 0;
+        }
+
+        .status-active {
+            color: #16A34A;
+            font-weight: 600;
+        }
+
+        @media (max-width: 1024px) {
+            .dashboard-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            #panel-dashboard {
+                padding: 1.5rem !important;
+            }
+
+            .dashboard-stats {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 1rem;
+            }
+
+            .dashboard-grid {
+                gap: 1.5rem;
+            }
+
+            .dashboard-card {
+                padding: 1.5rem;
+            }
+
+            .table-header {
+                grid-template-columns: 1fr 1fr 1fr;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .dashboard-stats {
+                grid-template-columns: 1fr;
+            }
+
+            .table-header {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        /* ============================================================================
+   ANALYSIS OVERVIEW VISUALIZATIONS
+   ============================================================================ */
+        .analysis-overview {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            border: 1px solid #E2E8F0;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .overview-chart {
+            flex: 1;
+            min-width: 300px;
+        }
+
+        .overview-chart h4 {
+            font-size: 1rem;
+            margin-bottom: 1.5rem;
+            color: #1E293B;
+            font-weight: 600;
+        }
+
+        /* Word Frequency Bar Chart */
+        .frequency-chart {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-around;
+            height: 200px;
+            gap: 0.75rem;
+            padding: 1rem;
+            background: #F8FAFC;
+            border-radius: 8px;
+        }
+
+        .chart-bar {
+            flex: 1;
+            background: linear-gradient(180deg, #0C66E4 0%, #1D7AFC 100%);
+            border-radius: 4px 4px 0 0;
+            position: relative;
+            min-height: 20px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .chart-bar:hover {
+            opacity: 0.8;
+            transform: translateY(-2px);
+        }
+
+        .bar-label {
+            font-size: 0.75rem;
+            color: #64748B;
+            position: absolute;
+            bottom: -1.5rem;
+            white-space: nowrap;
+            font-weight: 500;
+        }
+
+        /* Donut Chart */
+        .donut-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background: #F8FAFC;
+            border-radius: 8px;
+            min-height: 200px;
+            justify-content: center;
+        }
+
+        .donut-chart {
+            width: 120px;
+            height: 120px;
+        }
+
+        .donut-text {
+            text-align: center;
+        }
+
+        .donut-value {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #0C66E4;
+        }
+
+        .donut-label {
+            font-size: 0.85rem;
+            color: #64748B;
+            margin-top: 0.25rem;
+        }
+
+        /* Responsive Layout for Visualizations */
+        @media (min-width: 1200px) {
+            .analysis-overview {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 2rem;
+            }
+
+            .analysis-overview h3 {
+                grid-column: 1 / -1;
+            }
+        }
+
+        @media (max-width: 1199px) {
+            .analysis-overview {
+                display: flex;
+                flex-direction: column;
+                gap: 1.5rem;
+            }
+
+            .analysis-overview > h3 {
+                order: -1;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .analysis-overview {
+                padding: 1.5rem;
+            }
+
+            .frequency-chart {
+                height: 150px;
+            }
+
+            .bar-label {
+                font-size: 0.7rem;
+            }
+        }
+
+        /* ============================================================================
+   INPUT DATA STYLES
+   ============================================================================ */
+        #panel-input-data {
+            padding: 2rem !important;
+            background-color: #F8FAFC !important;
+        }
+
+        .input-data-header {
+            margin-bottom: 2.5rem;
+        }
+
+        .input-data-header h1 {
+            font-size: 2rem;
+            color: #1E293B;
+            margin-bottom: 0.5rem;
+        }
+
+        .input-card {
+            background: white;
+            border: 1px solid #E2E8F0;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            margin-bottom: 1.5rem;
+        }
+
+        .input-card-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #1E293B;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .input-icon {
+            font-size: 1.5rem;
+        }
+
+        .input-description {
+            color: #64748B;
+            font-size: 0.875rem;
+            margin-bottom: 1.5rem;
+        }
+
+        /* Drop Zone Styles */
+        .drop-zone {
+            border: 2px dashed #CBD5E1;
+            border-radius: 12px;
+            padding: 4rem 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: #F8FAFC;
+        }
+
+        .drop-zone:hover {
+            border-color: #0C66E4;
+            background-color: #EFF6FF;
+        }
+
+        .drop-zone.drag-over {
+            border-color: #0C66E4;
+            background-color: #EFF6FF;
+            transform: scale(1.01);
+        }
+
+        .drop-zone-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            color: #0C66E4;
+        }
+
+        .drop-zone-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #1E293B;
+            margin-bottom: 0.5rem;
+        }
+
+        .drop-zone-divider {
+            font-size: 0.875rem;
+            color: #94A3B8;
+            margin-bottom: 1.5rem;
+        }
+
+        .btn-browse {
+            background: #0C66E4;
+            color: white;
+            border: none;
+            padding: 0.875rem 2rem;
+            border-radius: 8px;
+            font-size: 0.9375rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            box-shadow: 0 2px 4px rgba(12, 102, 228, 0.2);
+            transition: all 0.2s ease;
+        }
+
+        .btn-browse:hover {
+            background: #0952B8;
+            box-shadow: 0 4px 8px rgba(12, 102, 228, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .supported-formats {
+            margin-top: 1rem;
+            font-size: 0.8125rem;
+            color: #94A3B8;
+        }
+
+        /* File Selected Styles */
+        .file-selected {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: #EFF6FF;
+            border: 1px solid #0C66E4;
+            border-radius: 8px;
+        }
+
+        .file-selected-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+
+        .file-selected-info {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex: 1;
+        }
+
+        .file-icon {
+            font-size: 1.5rem;
+        }
+
+        .file-name {
+            font-weight: 600;
+            color: #1E293B;
+        }
+
+        .file-status {
+            font-size: 0.8125rem;
+            color: #64748B;
+            margin-top: 0.25rem;
+        }
+
+        .btn-analyze {
+            background: #16A34A;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-size: 0.9375rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            box-shadow: 0 2px 4px rgba(22, 163, 74, 0.2);
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .btn-analyze:hover {
+            background: #15803D;
+            box-shadow: 0 4px 8px rgba(22, 163, 74, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .btn-clear {
+            margin-top: 1rem;
+            background: #DC2626;
+            color: white;
+            border: none;
+            padding: 0.625rem 1.25rem;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s ease;
+        }
+
+        .btn-clear:hover {
+            background: #B91C1C;
+            box-shadow: 0 2px 4px rgba(220, 38, 38, 0.2);
+        }
+
+        /* URL Input Styles */
+        .url-input-group {
+            display: flex;
+            gap: 1rem;
+            align-items: flex-start;
+        }
+
+        .url-input-wrapper {
+            flex: 1;
+        }
+
+        .url-input {
+            width: 100%;
+            padding: 0.875rem 1rem;
+            border: 1px solid #CBD5E1;
+            border-radius: 8px;
+            font-size: 0.9375rem;
+            transition: all 0.2s ease;
+        }
+
+        .url-input:focus {
+            outline: none;
+            border-color: #0C66E4;
+            box-shadow: 0 0 0 3px rgba(12, 102, 228, 0.1);
+        }
+
+        .btn-url-analyze {
+            background: #1E40AF;
+            color: white;
+            border: none;
+            padding: 0.875rem 1.75rem;
+            border-radius: 8px;
+            font-size: 0.9375rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            box-shadow: 0 2px 4px rgba(30, 64, 175, 0.2);
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .btn-url-analyze:hover {
+            background: #1E3A8A;
+            box-shadow: 0 4px 8px rgba(30, 64, 175, 0.3);
+            transform: translateY(-2px);
+        }
+
+        @media (max-width: 768px) {
+            #panel-input-data {
+                padding: 1.5rem !important;
+            }
+
+            .input-card {
+                padding: 1.5rem;
+            }
+
+            .drop-zone {
+                padding: 2rem 1rem;
+            }
+
+            .drop-zone-icon {
+                font-size: 2.5rem;
+            }
+
+            .file-selected-content {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .btn-analyze {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .url-input-group {
+                flex-direction: column;
+            }
+
+            .btn-url-analyze {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+
+        /* ============================================================================
+   VISUALIZATION FILTER STYLES
+   ============================================================================ */
+        .viz-filters {
+            background: white;
+            border: 1px solid #E2E8F0;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            gap: 2rem;
+            align-items: flex-start;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .filter-label {
+            font-weight: 600;
+            color: #1E293B;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+        }
+
+        .filter-hint {
+            font-size: 0.8rem;
+            color: #94A3B8;
+            margin: 0;
+        }
+
+        /* Stopword Input Styles */
+        .stopword-input {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .btn-filter-apply {
+            background: #0C66E4;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.25rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .btn-filter-apply:hover {
+            background: #0952B8;
+            box-shadow: 0 2px 4px rgba(139, 92, 246, 0.2);
+            transform: translateY(-1px);
+        }
+
+        .btn-clear-filter {
+            background: #EF4444;
+            color: white;
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            transition: all 0.2s ease;
+        }
+
+        .btn-clear-filter:hover {
+            background: #DC2626;
+            box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2);
+        }
+
+        /* Search Word Input Styles */
+        .search-word-input {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .word-input {
+            flex: 1;
+            min-width: 200px;
+            padding: 0.75rem 1rem;
+            border: 1px solid #CBD5E1;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+        }
+
+        .word-input:focus {
+            outline: none;
+            border-color: #0C66E4;
+            box-shadow: 0 0 0 3px rgba(12, 102, 228, 0.1);
+        }
+
+        .btn-search-word {
+            background: #0C66E4;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.25rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .btn-search-word:hover {
+            background: #0952B8;
+            box-shadow: 0 2px 4px rgba(12, 102, 228, 0.2);
+            transform: translateY(-1px);
+        }
+
+        .btn-clear-search {
+            background: #EF4444;
+            color: white;
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            transition: all 0.2s ease;
+        }
+
+        .btn-clear-search:hover {
+            background: #DC2626;
+            box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2);
+        }
+
+        .filter-stats {
+            display: flex;
+            gap: 1.5rem;
+            padding: 1rem;
+            background: #F8FAFC;
+            border-radius: 8px;
+            border: 1px solid #E2E8F0;
+        }
+
+        .filter-stat {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: #64748B;
+            font-weight: 500;
+        }
+
+        .stat-value {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #0C66E4;
+        }
+
+        @media (max-width: 1024px) {
+            .viz-filters {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+
+            .search-word-input {
+                width: 100%;
+            }
+
+            .word-input {
+                flex: 1;
+            }
+
+            .filter-stats {
+                grid-column: 1 / -1;
+                justify-content: center;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .viz-filters {
+                padding: 1.5rem;
+                gap: 1rem;
+            }
+
+            .search-word-input {
+                flex-direction: column;
+                width: 100%;
+            }
+
+            .word-input {
+                width: 100%;
+                min-width: auto;
+            }
+
+            .btn-search-word {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .filter-stats {
+                flex-direction: column;
+            }
+
+            .filter-stat {
+                text-align: left;
+            }
+        }
+
+        /* ============================================================================
+   HISTORY STYLES
+   ============================================================================ */
+        #panel-history {
+            padding: 2rem !important;
+            background-color: #F8FAFC !important;
+        }
+
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 2.5rem;
+            gap: 2rem;
+        }
+
+        .history-header h1 {
+            font-size: 2rem;
+            color: #1E293B;
+            margin-bottom: 0.5rem;
+        }
+
+        .btn-refresh {
+            background: white;
+            border: 1px solid #CBD5E1;
+            color: #1E293B;
+            padding: 0.875rem 1.5rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .btn-refresh:hover {
+            background: #F1F5F9;
+            border-color: #0C66E4;
+            color: #0C66E4;
+        }
+
+        /* History Controls */
+        .history-controls {
+            background: white;
+            border: 1px solid #E2E8F0;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            display: grid;
+            grid-template-columns: 1fr auto auto;
+            gap: 1.5rem;
+            align-items: flex-end;
+        }
+
+        .search-box {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 1rem;
+            font-size: 1.1rem;
+            color: #94A3B8;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 0.75rem 1rem 0.75rem 2.75rem;
+            border: 1px solid #E2E8F0;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #0C66E4;
+            box-shadow: 0 0 0 3px rgba(12, 102, 228, 0.1);
+        }
+
+        .filter-buttons {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            background: white;
+            border: 1px solid #E2E8F0;
+            color: #64748B;
+            padding: 0.65rem 1.25rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .filter-btn:hover {
+            border-color: #0C66E4;
+            color: #0C66E4;
+        }
+
+        .filter-btn.active {
+            background: #0C66E4;
+            color: white;
+            border-color: #0C66E4;
+        }
+
+        .time-filter {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .time-filter label {
+            font-size: 0.9rem;
+            color: #475569;
+            font-weight: 500;
+        }
+
+        .time-select {
+            padding: 0.65rem 1rem;
+            border: 1px solid #E2E8F0;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            background: white;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .time-select:focus {
+            outline: none;
+            border-color: #0C66E4;
+            box-shadow: 0 0 0 3px rgba(12, 102, 228, 0.1);
+        }
+
+        /* History Table */
+        .history-table-container {
+            background: white;
+            border: 1px solid #E2E8F0;
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 2rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            min-height: 400px;
+            position: relative;
+        }
+
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .history-table thead {
+            background: #F8FAFC;
+            border-bottom: 1px solid #E2E8F0;
+        }
+
+        .history-table th {
+            padding: 1.25rem 1rem;
+            text-align: left;
+            font-weight: 600;
+            color: #64748B;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .history-table tbody tr {
+            border-bottom: 1px solid #E2E8F0;
+            transition: background 0.2s ease;
+        }
+
+        .history-table tbody tr:hover {
+            background: #F8FAFC;
+        }
+
+        .history-table td {
+            padding: 1.25rem 1rem;
+            color: #1E293B;
+            font-size: 0.9rem;
+        }
+
+        .record-type {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.4rem 0.8rem;
+            background: #FEF3C7;
+            color: #92400E;
+            border-radius: 6px;
+            font-weight: 500;
+            font-size: 0.8rem;
+        }
+
+        .record-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.4rem 0.8rem;
+            border-radius: 6px;
+            font-weight: 500;
+            font-size: 0.8rem;
+        }
+
+        .status-success {
+            background: #D1FAE5;
+            color: #065F46;
+        }
+
+        .status-pending {
+            background: #E0E7FF;
+            color: #3730A3;
+        }
+
+        /* Empty State */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            padding: 4rem 2rem;
+            text-align: center;
+        }
+
+        .empty-icon {
+            font-size: 4rem;
+            opacity: 0.5;
+        }
+
+        .empty-title {
+            font-size: 1.25rem;
+            color: #64748B;
+            margin: 0;
+        }
+
+        .empty-description {
+            color: #94A3B8;
+            font-size: 0.95rem;
+            max-width: 400px;
+        }
+
+        /* Pagination */
+        .history-pagination {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .btn-pagination {
+            background: white;
+            border: 1px solid #E2E8F0;
+            color: #64748B;
+            padding: 0.65rem 1.25rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-pagination:hover:not(:disabled) {
+            border-color: #0C66E4;
+            color: #0C66E4;
+            background: #F8FAFC;
+        }
+
+        .btn-pagination:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .pagination-info {
+            color: #64748B;
+            font-weight: 500;
+            font-size: 0.9rem;
+            min-width: 80px;
+            text-align: center;
+        }
+
+        @media (max-width: 1024px) {
+            .history-controls {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+
+            .filter-buttons {
+                grid-column: 1 / -1;
+            }
+
+            .time-filter {
+                grid-column: 1 / -1;
+            }
+
+            .history-table {
+                font-size: 0.85rem;
+            }
+
+            .history-table th,
+            .history-table td {
+                padding: 0.75rem 0.5rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            #panel-history {
+                padding: 1.5rem !important;
+            }
+
+            .history-header {
+                flex-direction: column;
+            }
+
+            .btn-refresh {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .history-controls {
+                padding: 1rem;
+            }
+
+            .search-input {
+                width: 100%;
+            }
+
+            .history-table {
+                font-size: 0.75rem;
+            }
+
+            .history-table th,
+            .history-table td {
+                padding: 0.5rem;
+            }
+
+            .filter-buttons {
+                gap: 0.5rem;
+            }
+
+            .filter-btn {
+                padding: 0.5rem 0.75rem;
+                font-size: 0.75rem;
+            }
+        }
+
+        /* ============================================================================
+   UTILITY CLASSES
+   ============================================================================ */
+        .icon {
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .mt-1 {
+            margin-top: 0.5rem;
+        }
+
+        .mt-2 {
+            margin-top: 1rem;
+        }
+
+        .mt-3 {
+            margin-top: 1.5rem;
+        }
+
+        .mt-4 {
+            margin-top: 2rem;
+        }
+
+        .mb-1 {
+            margin-bottom: 0.5rem;
+        }
+
+        .mb-2 {
+            margin-bottom: 1rem;
+        }
+
+        .mb-3 {
+            margin-bottom: 1.5rem;
+        }
+
+        .mb-4 {
+            margin-bottom: 2rem;
+        }
+
+        .p-1 {
+            padding: 0.5rem;
+        }
+
+        .p-2 {
+            padding: 1rem;
+        }
+
+        .p-3 {
+            padding: 1.5rem;
+        }
+
+        .p-4 {
+            padding: 2rem;
+        }
+
+        .flex {
+            display: flex;
+        }
+
+        .flex-col {
+            flex-direction: column;
+        }
+
+        .gap-1 {
+            gap: 0.5rem;
+        }
+
+        .gap-2 {
+            gap: 1rem;
+        }
+
+        .gap-3 {
+            gap: 1.5rem;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .visible {
+            display: block !important;
+        }
+
+        .truncate {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Top Action Bar -->
+    <div class="top-bar">
+        <div class="top-bar-left">
+            <h1 class="platform-title">
+                <span class="icon">∞</span>
+                Word Intelligence & PySpark Analytics
+            </h1>
+        </div>
+        <div class="top-bar-right">
+            <button class="btn btn-secondary" id="analyze-url-btn">
+                <span class="icon">🔗</span>
+                Analyze URL
+            </button>
+            <button class="btn btn-primary" id="upload-file-btn">
+                <span class="icon">📤</span>
+                Upload File
+            </button>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <!-- Left Sidebar Navigation -->
+        <aside class="sidebar">
+            <nav class="nav-menu">
+                <button class="nav-item active" data-panel="home">
+                    <!-- <span class="nav-icon">⚡</span> -->
+                    <span class="nav-label">Home</span>
+                </button>
+                <button class="nav-item" data-panel="dashboard">
+                    <span class="nav-label">Dashboard</span>
+                </button>
+                <button class="nav-item" data-panel="input-data">
+                    <span class="nav-label">Input Data</span>
+                </button>
+                <button class="nav-item" data-panel="visualizations">
+                    <span class="nav-label">Visualizations</span>
+                </button>
+                <button class="nav-item" data-panel="spark">
+                    <span class="nav-label">Pyspark Execution</span>
+                </button>
+                <button class="nav-item" data-panel="spark-ui">
+                    <span class="nav-label">Spark UI</span>
+                </button>
+                <button class="nav-item" data-panel="raw-data">
+                    <span class="nav-label">Raw Data</span>
+                </button>
+                <button class="nav-item" data-panel="history">
+                    <span class="nav-label">History</span>
+                </button>
+            </nav>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="content-area">
+            <!-- Home Page -->
+            <section id="panel-home" class="panel active">
+                <div class="home-header">
+                    <div>
+                        <h1>Welcome to Word Intelligence Platform</h1>
+                        <p class="text-muted">Advanced text analysis with Apache Spark</p>
+                    </div>
+                    <div class="home-stats">
+                        <div class="stat-badge">
+                            <span class="stat-number">0</span>
+                            <span class="stat-label">Total Analyses</span>
+                        </div>
+                        <div class="stat-badge">
+                            <span class="stat-number">0</span>
+                            <span class="stat-label">Files Processed</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="home-cards-grid">
+                    <div class="home-card">
+                        <div class="home-card-icon">📁</div>
+                        <h3>Upload Files</h3>
+                        <p>Upload documents for instant text analysis and processing with PySpark.</p>
+                        <button class="btn btn-primary">Start Upload</button>
+                    </div>
+                    <div class="home-card">
+                        <div class="home-card-icon">🌐</div>
+                        <h3>Analyze URLs</h3>
+                        <p>Paste a URL to fetch and analyze web page content automatically.</p>
+                        <button class="btn btn-primary">Analyze URL</button>
+                    </div>
+                    <div class="home-card">
+                        <div class="home-card-icon">📊</div>
+                        <h3>View Results</h3>
+                        <p>Visualize analysis results with interactive charts and detailed statistics.</p>
+                        <button class="btn btn-primary">View Charts</button>
+                    </div>
+                </div>
+
+                <div class="home-features">
+                    <h2>Platform Features</h2>
+                    <div class="features-grid">
+                        <div class="feature-box">
+                            <div class="feature-icon">✨</div>
+                            <h4>Advanced Analysis</h4>
+                            <p>Real-time text analysis with word frequency, sentiment scoring, and statistical insights.</p>
+                        </div>
+                        <div class="feature-box">
+                            <div class="feature-icon">⚡</div>
+                            <h4>PySpark Processing</h4>
+                            <p>Distributed processing engine for fast analysis of large text documents.</p>
+                        </div>
+                        <div class="feature-box">
+                            <div class="feature-icon">📈</div>
+                            <h4>Rich Visualizations</h4>
+                            <p>Interactive charts including word frequency, sentiment, and distribution analysis.</p>
+                        </div>
+                        <div class="feature-box">
+                            <div class="feature-icon">💾</div>
+                            <h4>Data Management</h4>
+                            <p>Complete history tracking with filtering, export, and download capabilities.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Dashboard Panel -->
+            <section id="panel-dashboard" class="panel">
+                <div class="dashboard-header">
+                    <h1>Dashboard</h1>
+                </div>
+
+                <!-- Stats Cards -->
+                <div class="dashboard-stats">
+                    <div class="stat-card">
+                        <div class="stat-card-label">Total Analyses</div>
+                        <div class="stat-card-value">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card-label">Files Processed</div>
+                        <div class="stat-card-value">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card-label">URLs Analyzed</div>
+                        <div class="stat-card-value">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card-label">Avg Process Time</div>
+                        <div class="stat-card-value">0.5s</div>
+                    </div>
+                </div>
+
+                <!-- Recent Analyses and System Health -->
+                <div class="dashboard-grid">
+                    <!-- Recent Analyses -->
+                    <div class="dashboard-card">
+                        <h3>Recent Analyses</h3>
+                        <div class="analyses-table">
+                            <div class="table-header">
+                                <div class="table-col">Type</div>
+                                <div class="table-col">Status</div>
+                                <div class="table-col">Time</div>
+                            </div>
+                            <div class="table-body">
+                                <div class="table-empty">No data yet</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- System Health -->
+                    <div class="dashboard-card">
+                        <h3>System Health</h3>
+                        <div class="health-status">
+                            <div class="health-indicator online">✓ All Systems Online</div>
+                            <div class="health-item">Spark Cluster: <span class="status-active">Active</span></div>
+                            <div class="health-item">Database: <span class="status-active">Connected</span></div>
+                            <div class="health-item">API: <span class="status-active">Running</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Analysis Overview -->
+                <div class="analysis-overview">
+                    <h3 style="margin-bottom: 2rem; font-size: 1.25rem; color: #1E293B;">Analysis Overview</h3>
+                    
+                    <!-- Word Frequency Chart -->
+                    <div class="overview-chart">
+                        <h4>Word Frequency Distribution</h4>
+                        <div class="frequency-chart">
+                            <div class="chart-bar" style="height: 60%;">
+                                <span class="bar-label">Data</span>
+                            </div>
+                            <div class="chart-bar" style="height: 80%;">
+                                <span class="bar-label">Analysis</span>
+                            </div>
+                            <div class="chart-bar" style="height: 45%;">
+                                <span class="bar-label">Spark</span>
+                            </div>
+                            <div class="chart-bar" style="height: 70%;">
+                                <span class="bar-label">Text</span>
+                            </div>
+                            <div class="chart-bar" style="height: 55%;">
+                                <span class="bar-label">Machine</span>
+                            </div>
+                            <div class="chart-bar" style="height: 65%;">
+                                <span class="bar-label">Learning</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Overall Stats Donut Chart -->
+                    <div class="overview-chart">
+                        <h4>Processing Status</h4>
+                        <div class="donut-container">
+                            <svg viewBox="0 0 120 120" class="donut-chart">
+                                <!-- Completed (Blue) -->
+                                <circle cx="60" cy="60" r="45" fill="none" stroke="#0C66E4" stroke-width="10" 
+                                    stroke-dasharray="0 282.7" stroke-dashoffset="0" transform="rotate(-90 60 60)"/>
+                                <!-- Pending (Light Gray) -->
+                                <circle cx="60" cy="60" r="45" fill="none" stroke="#E2E8F0" stroke-width="10" 
+                                    stroke-dasharray="282.7 282.7" stroke-dashoffset="-0" transform="rotate(-90 60 60)"/>
+                            </svg>
+                            <div class="donut-text">
+                                <div class="donut-value">0%</div>
+                                <div class="donut-label">Complete</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Input Data Panel -->
+            <section id="panel-input-data" class="panel">
+                <div class="input-data-header">
+                    <h1>Upload & Analyze</h1>
+                    <p class="text-muted">Upload your documents or analyze URLs to get started</p>
+                </div>
+
+                <!-- Upload Document Section -->
+                <div class="input-card">
+                    <h3 class="input-card-title">
+                        <span class="input-icon">📤</span>
+                        Upload Document
+                    </h3>
+                    <p class="input-description">
+                        Upload your file containing text content to automatically analyze word frequency.
+                    </p>
+
+                    <div id="drop-zone" class="drop-zone">
+                        <div class="drop-zone-icon">📄</div>
+                        <div class="drop-zone-title">Drag & Drop your file here</div>
+                        <div class="drop-zone-divider">or</div>
+                        <button id="browse-btn" class="btn-browse">
+                            <span>📁</span>
+                            <span>Browse Files</span>
+                        </button>
+                        <input type="file" id="file-input" accept=".txt,.docx,.pdf,.csv,.html,.htm" style="display: none;">
+                        <div class="supported-formats">
+                            Supported: TXT, DOCX, PDF, CSV, HTML
+                        </div>
+                    </div>
+
+                    <div id="file-selected" class="file-selected hidden">
+                        <div class="file-selected-content">
+                            <div class="file-selected-info">
+                                <span class="file-icon">✅</span>
+                                <div>
+                                    <div class="file-name">Selected: <span id="filename"></span></div>
+                                    <div class="file-status">Ready to analyze</div>
+                                </div>
+                            </div>
+                            <button id="analyze-btn" class="btn-analyze">
+                                <span>🔍</span>
+                                <span>Analyze File</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <button id="clear-btn" class="btn-clear hidden">
+                        <span>🗑️</span>
+                        <span>Clear Selection</span>
+                    </button>
+                </div>
+
+                <!-- URL Analysis Section -->
+                <div class="input-card">
+                    <h3 class="input-card-title">
+                        <span class="input-icon">🌐</span>
+                        Analyze URL
+                    </h3>
+                    <p class="input-description">
+                        Enter a website URL to fetch and analyze its text content.
+                    </p>
+
+                    <div class="url-input-group">
+                        <div class="url-input-wrapper">
+                            <input type="url" id="url-input" placeholder="https://example.com/article" class="url-input">
+                        </div>
+                        <button id="url-analyze-btn" class="btn-url-analyze">
+                            <span>🔍</span>
+                            <span>Analyze URL</span>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Visualizations Panel -->
+            <section id="panel-visualizations" class="panel">
+
+                <div class="panel-header">
+                    <h2>Analytics</h2>
+                    <p class="text-muted">Real-time analytics and word intelligence metrics</p>
+                </div>
+
+                <!-- Filter Controls -->
+                <div class="viz-filters">
+                    <div class="filter-group">
+                        <label class="filter-label">Exclude Stopwords</label>
+                        <div class="stopword-input">
+                            <input type="text" id="stopword-input" placeholder="e.g., the, and, is" class="word-input">
+                            <button id="stopword-btn" class="btn-filter-apply">
+                                <span>⊘</span>
+                                Apply
+                            </button>
+                            <button id="clear-stopword-btn" class="btn-clear-filter hidden">
+                                <span>✕</span>
+                            </button>
+                        </div>
+                        <p class="filter-hint">Remove specific words or use default common words</p>
+                    </div>
+
+                    <div class="filter-group">
+                        <label class="filter-label">Search Word</label>
+                        <div class="search-word-input">
+                            <input type="text" id="search-word" placeholder="e.g., data, analysis" class="word-input">
+                            <button id="search-word-btn" class="btn-search-word">
+                                <span>🔍</span>
+                                Search
+                            </button>
+                            <button id="clear-search-btn" class="btn-clear-search hidden">
+                                <span>✕</span>
+                            </button>
+                        </div>
+                        <p class="filter-hint">Highlight and filter specific words</p>
+                    </div>
+
+                    <div class="filter-stats">
+                        <div class="filter-stat">
+                            <span class="stat-label">Filtered Words:</span>
+                            <span class="stat-value" id="filtered-count">0</span>
+                        </div>
+                        <div class="filter-stat">
+                            <span class="stat-label">Active Filter:</span>
+                            <span class="stat-value" id="active-filter">None</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Summary Cards -->
+                <div class="summary-cards">
+                    <div class="card summary-card">
+                        <div class="card-header">
+                            <span class="icon large">📝</span>
+                            <span class="label">Total Words</span>
+                        </div>
+                        <div class="card-value">12,847</div>
+                        <div class="card-footer">+5.2% from last analysis</div>
+                    </div>
+
+                    <div class="card summary-card">
+                        <div class="card-header">
+                            <span class="icon large">✨</span>
+                            <span class="label">Unique Words</span>
+                        </div>
+                        <div class="card-value">3,421</div>
+                        <div class="card-footer">Vocabulary richness: 26.6%</div>
+                    </div>
+
+                    <div class="card summary-card">
+                        <div class="card-header">
+                            <span class="icon large">💭</span>
+                            <span class="label">Sentiment Score</span>
+                        </div>
+                        <div class="card-value">7.8/10</div>
+                        <div class="card-footer">Positive trend detected</div>
+                    </div>
+
+                    <div class="card summary-card">
+                        <div class="card-header">
+                            <span class="icon large">⏱️</span>
+                            <span class="label">Processing Time</span>
+                        </div>
+                        <div class="card-value">2.34s</div>
+                        <div class="card-footer">Spark cluster optimization</div>
+                    </div>
+                </div>
+
+                <!-- Statistics Section -->
+                <div class="stats-section">
+                    <h3>Text Statistics</h3>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <label>Average Word Length</label>
+                            <value>5.2 characters</value>
+                        </div>
+                        <div class="stat-item">
+                            <label>Lexical Diversity</label>
+                            <value>0.267</value>
+                        </div>
+                        <div class="stat-item">
+                            <label>Reading Level</label>
+                            <value>University</value>
+                        </div>
+                        <div class="stat-item">
+                            <label>Document Density</label>
+                            <value>High</value>
+                        </div>
+                    </div>
+                </div>
+                <div class="panel-header">
+                    <h2>Analytics Visualizations</h2>
+                    <p class="text-muted">Advanced text analysis and pattern recognition</p>
+                </div>
+
+                <div class="charts-grid">
+                    <!-- Word Frequency Chart -->
+                    <div class="card chart-card">
+                        <div class="card-header">
+                            <h3>Word Frequency Distribution</h3>
+                        </div>
+                        <div class="chart-placeholder">
+                            <svg viewBox="0 0 400 250" class="bar-chart">
+                                <!-- Y Axis -->
+                                <line x1="50" y1="30" x2="50" y2="220" stroke="#E2E8F0" stroke-width="2" />
+                                <!-- X Axis -->
+                                <line x1="50" y1="220" x2="380" y2="220" stroke="#E2E8F0" stroke-width="2" />
+
+                                <!-- Bars -->
+                                <rect x="70" y="140" width="25" height="80" fill="#0C66E4" rx="4" />
+                                <rect x="105" y="100" width="25" height="120" fill="#1D7AFC" rx="4" />
+                                <rect x="140" y="120" width="25" height="100" fill="#0C66E4" rx="4" />
+                                <rect x="175" y="80" width="25" height="140" fill="#1D7AFC" rx="4" />
+                                <rect x="210" y="110" width="25" height="110" fill="#0C66E4" rx="4" />
+                                <rect x="245" y="150" width="25" height="70" fill="#1D7AFC" rx="4" />
+                                <rect x="280" y="130" width="25" height="90" fill="#0C66E4" rx="4" />
+                                <rect x="315" y="160" width="25" height="60" fill="#1D7AFC" rx="4" />
+
+                                <!-- Labels -->
+                                <text x="82" y="240" font-size="12" fill="#64748B">the</text>
+                                <text x="112" y="240" font-size="12" fill="#64748B">and</text>
+                                <text x="147" y="240" font-size="12" fill="#64748B">data</text>
+                                <text x="182" y="240" font-size="12" fill="#64748B">analysis</text>
+                                <text x="217" y="240" font-size="12" fill="#64748B">spark</text>
+                                <text x="252" y="240" font-size="12" fill="#64748B">python</text>
+                                <text x="287" y="240" font-size="12" fill="#64748B">word</text>
+                                <text x="322" y="240" font-size="12" fill="#64748B">model</text>
+                            </svg>
+                        </div>
+                    </div>
+
+                    <!-- Bigrams Chart -->
+                    <div class="card chart-card">
+                        <div class="card-header">
+                            <h3>Most Common Bigrams</h3>
+                        </div>
+                        <div class="chart-placeholder">
+                            <div class="bigram-list">
+                                <div class="bigram-item">
+                                    <span class="bigram-text">data analysis</span>
+                                    <div class="bigram-bar">
+                                        <div class="bigram-fill" style="width: 95%"></div>
+                                    </div>
+                                    <span class="bigram-count">1,247</span>
+                                </div>
+                                <div class="bigram-item">
+                                    <span class="bigram-text">machine learning</span>
+                                    <div class="bigram-bar">
+                                        <div class="bigram-fill" style="width: 87%"></div>
+                                    </div>
+                                    <span class="bigram-count">1,132</span>
+                                </div>
+                                <div class="bigram-item">
+                                    <span class="bigram-text">spark framework</span>
+                                    <div class="bigram-bar">
+                                        <div class="bigram-fill" style="width: 72%"></div>
+                                    </div>
+                                    <span class="bigram-count">935</span>
+                                </div>
+                                <div class="bigram-item">
+                                    <span class="bigram-text">distributed computing</span>
+                                    <div class="bigram-bar">
+                                        <div class="bigram-fill" style="width: 65%"></div>
+                                    </div>
+                                    <span class="bigram-count">846</span>
+                                </div>
+                                <div class="bigram-item">
+                                    <span class="bigram-text">text processing</span>
+                                    <div class="bigram-bar">
+                                        <div class="bigram-fill" style="width: 58%"></div>
+                                    </div>
+                                    <span class="bigram-count">754</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Trigrams Chart -->
+                    <div class="card chart-card">
+                        <div class="card-header">
+                            <h3>Top Trigrams</h3>
+                        </div>
+                        <div class="chart-placeholder">
+                            <div class="trigram-list">
+                                <div class="trigram-item">machine learning model</div>
+                                <div class="trigram-item">spark distributed computing</div>
+                                <div class="trigram-item">data science analytics</div>
+                                <div class="trigram-item">natural language processing</div>
+                                <div class="trigram-item">big data framework</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Emotion Analysis Chart -->
+                    <div class="card chart-card">
+                        <div class="card-header">
+                            <h3>Emotion Analysis Distribution</h3>
+                        </div>
+                        <div class="chart-placeholder emotion-chart">
+                            <div class="emotion-item">
+                                <div class="emotion-label">Joy</div>
+                                <div class="emotion-bar">
+                                    <div class="emotion-fill" style="width: 35%"></div>
+                                </div>
+                                <div class="emotion-value">35%</div>
+                            </div>
+                            <div class="emotion-item">
+                                <div class="emotion-label">Trust</div>
+                                <div class="emotion-bar">
+                                    <div class="emotion-fill" style="width: 28%"></div>
+                                </div>
+                                <div class="emotion-value">28%</div>
+                            </div>
+                            <div class="emotion-item">
+                                <div class="emotion-label">Neutral</div>
+                                <div class="emotion-bar">
+                                    <div class="emotion-fill" style="width: 22%"></div>
+                                </div>
+                                <div class="emotion-value">22%</div>
+                            </div>
+                            <div class="emotion-item">
+                                <div class="emotion-label">Anticipation</div>
+                                <div class="emotion-bar">
+                                    <div class="emotion-fill" style="width: 15%"></div>
+                                </div>
+                                <div class="emotion-value">15%</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TF-IDF Topic Clusters -->
+                    <div class="card chart-card">
+                        <div class="card-header">
+                            <h3>TF-IDF Topic Clusters</h3>
+                        </div>
+                        <div class="chart-placeholder">
+                            <div class="topic-cluster">
+                                <div class="topic-bubble" style="width: 120px; height: 120px;">
+                                    <div class="topic-label">Data Analytics</div>
+                                    <div class="topic-score">0.89</div>
+                                </div>
+                                <div class="topic-bubble" style="width: 100px; height: 100px;">
+                                    <div class="topic-label">Machine Learning</div>
+                                    <div class="topic-score">0.76</div>
+                                </div>
+                                <div class="topic-bubble" style="width: 85px; height: 85px;">
+                                    <div class="topic-label">Spark</div>
+                                    <div class="topic-score">0.64</div>
+                                </div>
+                                <div class="topic-bubble" style="width: 95px; height: 95px;">
+                                    <div class="topic-label">NLP</div>
+                                    <div class="topic-score">0.71</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- PySpark Execution Panel -->
+            <section id="panel-spark" class="panel">
+                <div class="panel-header">
+                    <h2>PySpark Cluster Execution</h2>
+                    <p class="text-muted">Real-time Spark job monitoring and DAG visualization</p>
+                </div>
+
+                <!-- Spark Status Bar -->
+                <div class="spark-status-bar">
+                    <div class="status-item">
+                        <span class="status-label">Job Status</span>
+                        <span class="status-badge" id="job-status">
+                            <span class="badge idle">Idle</span>
+                        </span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">Cluster Health</span>
+                        <span class="health-indicator green">●</span>
+                        <span class="status-text">Healthy</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">Connected Executors</span>
+                        <span class="status-value">8/8</span>
+                    </div>
+                    <button class="btn btn-sm btn-secondary" id="trigger-spark-job">Run Analysis</button>
+                </div>
+
+                <!-- Progress Bar -->
+                <div class="progress-section">
+                    <div class="progress-info">
+                        <span class="progress-label">Job Progress</span>
+                        <span class="progress-percentage" id="progress-percentage">0%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progress-fill"></div>
+                    </div>
+                </div>
+
+                <!-- Metrics Grid -->
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-label">Total Jobs</div>
+                        <div class="metric-value" id="metric-jobs">0</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Active Stages</div>
+                        <div class="metric-value" id="metric-stages">0</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Total Tasks</div>
+                        <div class="metric-value" id="metric-tasks">0</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Executor Memory</div>
+                        <div class="metric-value" id="metric-memory">0 MB</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Shuffle Read</div>
+                        <div class="metric-value" id="metric-shuffle-read">0 MB</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Shuffle Write</div>
+                        <div class="metric-value" id="metric-shuffle-write">0 MB</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Avg Task Time</div>
+                        <div class="metric-value" id="metric-task-time">0 ms</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Skew Indicator</div>
+                        <div class="metric-value" id="metric-skew">Low</div>
+                    </div>
+                </div>
+
+                <!-- DAG Visualization -->
+                <div class="dag-section">
+                    <h3>Execution DAG</h3>
+                    <div class="dag-container">
+                        <svg viewBox="0 0 800 400" class="dag-svg">
+                            <!-- Input Stage -->
+                            <rect x="20" y="80" width="140" height="80" fill="#E8F4F8" stroke="#0C66E4" stroke-width="2"
+                                rx="8" />
+                            <text x="90" y="115" text-anchor="middle" font-size="14" font-weight="bold"
+                                fill="#0C66E4">Input</text>
+                            <text x="90" y="135" text-anchor="middle" font-size="12" fill="#64748B">Read Text
+                                File</text>
+
+                            <!-- Parse Stage -->
+                            <rect x="200" y="80" width="140" height="80" fill="#F0E8F8" stroke="#7C3AED"
+                                stroke-width="2" rx="8" />
+                            <text x="270" y="115" text-anchor="middle" font-size="14" font-weight="bold"
+                                fill="#7C3AED">Parse</text>
+                            <text x="270" y="135" text-anchor="middle" font-size="12" fill="#64748B">Tokenize
+                                Text</text>
+
+                            <!-- Analysis Stage -->
+                            <rect x="380" y="80" width="140" height="80" fill="#F8EFE8" stroke="#DC2626"
+                                stroke-width="2" rx="8" />
+                            <text x="450" y="115" text-anchor="middle" font-size="14" font-weight="bold"
+                                fill="#DC2626">Analysis</text>
+                            <text x="450" y="135" text-anchor="middle" font-size="12" fill="#64748B">Count Words</text>
+
+                            <!-- Output Stage -->
+                            <rect x="560" y="80" width="140" height="80" fill="#E8F8E8" stroke="#16A34A"
+                                stroke-width="2" rx="8" />
+                            <text x="630" y="115" text-anchor="middle" font-size="14" font-weight="bold"
+                                fill="#16A34A">Output</text>
+                            <text x="630" y="135" text-anchor="middle" font-size="12" fill="#64748B">Aggregate
+                                Results</text>
+
+                            <!-- Arrows -->
+                            <defs>
+                                <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3"
+                                    orient="auto">
+                                    <polygon points="0 0, 10 3, 0 6" fill="#64748B" />
+                                </marker>
+                            </defs>
+                            <line x1="160" y1="120" x2="200" y2="120" stroke="#64748B" stroke-width="2"
+                                marker-end="url(#arrowhead)" />
+                            <line x1="340" y1="120" x2="380" y2="120" stroke="#64748B" stroke-width="2"
+                                marker-end="url(#arrowhead)" />
+                            <line x1="520" y1="120" x2="560" y2="120" stroke="#64748B" stroke-width="2"
+                                marker-end="url(#arrowhead)" />
+
+                            <!-- Shuffle Layer -->
+                            <rect x="200" y="220" width="360" height="60" fill="#F9F1E8" stroke="#F97316"
+                                stroke-width="2" stroke-dasharray="5,5" rx="8" />
+                            <text x="380" y="255" text-anchor="middle" font-size="13" font-weight="bold"
+                                fill="#F97316">Shuffle Layer - Word Aggregation</text>
+
+                            <!-- Connecting lines to shuffle -->
+                            <line x1="450" y1="160" x2="380" y2="220" stroke="#F97316" stroke-width="1.5"
+                                stroke-dasharray="3,3" />
+                        </svg>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Raw Data Panel -->
+            <section id="panel-raw-data" class="panel">
+                <div class="panel-header">
+                    <h2>Raw Data Analysis</h2>
+                    <p class="text-muted">Word frequency and statistical breakdown</p>
+                </div>
+
+                <!-- Search and Filters -->
+                <div class="data-controls">
+                    <div class="search-box">
+                        <span class="search-icon">🔍</span>
+                        <input type="text" id="data-search" class="search-input"
+                            placeholder="Search words, frequency, length...">
+                    </div>
+                    <div class="filter-controls">
+                        <select id="sort-column" class="select-control">
+                            <option value="frequency-desc">Frequency (High to Low)</option>
+                            <option value="frequency-asc">Frequency (Low to High)</option>
+                            <option value="alphabetical">Alphabetical A-Z</option>
+                            <option value="length">Word Length</option>
+                        </select>
+                        <button class="btn btn-sm btn-secondary" id="export-csv-btn">
+                            <span class="icon">📥</span>
+                            Export CSV
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Data Table -->
+                <div class="table-container">
+                    <table class="data-table" id="data-table">
+                        <thead>
+                            <tr>
+                                <th class="col-word">Word</th>
+                                <th class="col-frequency">Frequency</th>
+                                <th class="col-normalized">% Normalized</th>
+                                <th class="col-length">Length</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-body">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                <div class="pagination-controls">
+                    <button class="btn btn-sm btn-secondary" id="prev-page" disabled>← Previous</button>
+                    <span class="pagination-info" id="pagination-info">Page 1 of 5</span>
+                    <button class="btn btn-sm btn-secondary" id="next-page">Next →</button>
+                </div>
+            </section>
+
+            <!-- History Panel -->
+            <section id="panel-history" class="panel">
+                <div class="history-header">
+                    <div>
+                        <h1>History & Records</h1>
+                        <p class="text-muted">View your previously processed analyses, files, and saved visual insights.</p>
+                    </div>
+                    <button id="refresh-btn" class="btn-refresh">
+                        <span>🔄</span>
+                        Refresh
+                    </button>
+                </div>
+
+                <!-- Search and Filters -->
+                <div class="history-controls">
+                    <div class="search-box">
+                        <span class="search-icon">🔍</span>
+                        <input type="text" id="history-search" placeholder="Search by filename, date, or job type..." class="search-input">
+                    </div>
+
+                    <div class="filter-buttons">
+                        <button class="filter-btn active" data-filter="all">All Records</button>
+                        <button class="filter-btn" data-filter="files">📁 File Uploads</button>
+                        <button class="filter-btn" data-filter="urls">🌐 URL Analyses</button>
+                        <button class="filter-btn" data-filter="spark">⚡ PySpark Jobs</button>
+                    </div>
+
+                    <div class="time-filter">
+                        <label for="time-range">Time Range:</label>
+                        <select id="time-range" class="time-select">
+                            <option value="all">All Time</option>
+                            <option value="today">Today</option>
+                            <option value="week">This Week</option>
+                            <option value="month">This Month</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- History Table -->
+                <div class="history-table-container">
+                    <table class="history-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>TYPE</th>
+                                <th>FILE / JOB NAME</th>
+                                <th>DATE PROCESSED</th>
+                                <th>TOTAL WORDS</th>
+                                <th>UNIQUE WORDS</th>
+                                <th>STATUS</th>
+                                <th>ACTIONS</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-tbody">
+                            <!-- Records will be populated here -->
+                        </tbody>
+                    </table>
+
+                    <!-- Empty State -->
+                    <div class="empty-state">
+                        <div class="empty-icon">📁</div>
+                        <h3 class="empty-title">No History Records Found</h3>
+                        <p class="empty-description">Try adjusting your filters or upload a file to create your first record.</p>
+                    </div>
+                </div>
+
+                <!-- Pagination -->
+                <div class="history-pagination">
+                    <button class="btn-pagination" id="prev-page">← Previous</button>
+                    <span class="pagination-info" id="history-pagination-info">Page 1 of 1</span>
+                    <button class="btn-pagination" id="next-page">Next →</button>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        // ============================================================================
+        // WORD INTELLIGENCE & PYSPARK ANALYTICS PLATFORM - JavaScript Module
+        // ============================================================================
+
+        // Mock Data Store
+        const dataStore = {
+            words: [
+                { word: 'data', frequency: 1247, length: 4 },
+                { word: 'analysis', frequency: 1132, length: 8 },
+                { word: 'machine', frequency: 987, length: 7 },
+                { word: 'learning', frequency: 934, length: 8 },
+                { word: 'spark', frequency: 876, length: 5 },
+                { word: 'python', frequency: 754, length: 6 },
+                { word: 'processing', frequency: 712, length: 10 },
+                { word: 'intelligence', frequency: 698, length: 12 },
+                { word: 'algorithm', frequency: 645, length: 9 },
+                { word: 'framework', frequency: 612, length: 9 },
+                { word: 'distributed', frequency: 578, length: 11 },
+                { word: 'computing', frequency: 561, length: 9 },
+                { word: 'natural', frequency: 543, length: 7 },
+                { word: 'language', frequency: 521, length: 8 },
+                { word: 'model', frequency: 498, length: 5 },
+                { word: 'neural', frequency: 476, length: 6 },
+                { word: 'network', frequency: 453, length: 7 },
+                { word: 'text', frequency: 431, length: 4 },
+                { word: 'clustering', frequency: 398, length: 10 },
+                { word: 'classification', frequency: 376, length: 14 },
+                { word: 'regression', frequency: 354, length: 10 },
+                { word: 'optimization', frequency: 332, length: 12 },
+                { word: 'performance', frequency: 301, length: 11 },
+                { word: 'metrics', frequency: 289, length: 7 },
+                { word: 'evaluation', frequency: 267, length: 10 },
+                { word: 'validation', frequency: 245, length: 10 },
+                { word: 'accuracy', frequency: 223, length: 8 },
+                { word: 'precision', frequency: 198, length: 9 },
+                { word: 'recall', frequency: 176, length: 6 },
+                { word: 'feature', frequency: 154, length: 7 },
+                { word: 'extraction', frequency: 132, length: 10 },
+                { word: 'transformation', frequency: 121, length: 14 },
+                { word: 'normalization', frequency: 109, length: 13 },
+                { word: 'tokenization', frequency: 98, length: 12 },
+                { word: 'sentiment', frequency: 87, length: 9 },
+                { word: 'emotion', frequency: 76, length: 7 },
+                { word: 'semantic', frequency: 65, length: 8 },
+                { word: 'syntax', frequency: 54, length: 6 },
+                { word: 'corpus', frequency: 43, length: 6 },
+                { word: 'vocabulary', frequency: 32, length: 10 },
+            ],
+
+            sparkJob: {
+                status: 'idle',
+                progress: 0,
+                jobs: 0,
+                stages: 0,
+                tasks: 0,
+                memory: 0,
+                shuffleRead: 0,
+                shuffleWrite: 0,
+                taskTime: 0,
+                skew: 'Low',
+            }
+        };
+
+        // ============================================================================
+        // UI CONFIGURATION
+        // ============================================================================
+
+        const UI = {
+            currentPanel: 'dashboard',
+            currentPage: 1,
+            rowsPerPage: 50,
+            filteredData: [...dataStore.words],
+            searchTerm: '',
+            sortBy: 'frequency-desc',
+
+            // Initialize event listeners
+            init() {
+                this.setupNavigation();
+                this.setupDataTable();
+                this.setupFileUpload();
+                this.setupSearchAndSort();
+                this.setupSparkSimulator();
+                this.setupTopBarButtons();
+                this.setupURLAnalyzer();
+            },
+
+            // ========================================================================
+            // NAVIGATION
+            // ========================================================================
+            setupNavigation() {
+                const navItems = document.querySelectorAll('.nav-item');
+                navItems.forEach(item => {
+                    item.addEventListener('click', () => {
+                        // Remove active from all
+                        navItems.forEach(i => i.classList.remove('active'));
+                        // Add active to clicked
+                        item.classList.add('active');
+
+                        // Hide all panels
+                        const panels = document.querySelectorAll('.panel');
+                        panels.forEach(p => p.classList.remove('active'));
+
+                        // Show selected panel
+                        const panelId = `panel-${item.dataset.panel}`;
+                        const panel = document.getElementById(panelId);
+                        if (panel) {
+                            panel.classList.add('active');
+                            UI.currentPanel = item.dataset.panel;
+                        }
+                    });
+                });
+            },
+
+            // ========================================================================
+            // DATA TABLE
+            // ========================================================================
+            setupDataTable() {
+                this.renderTable();
+
+                // Pagination buttons
+                document.getElementById('prev-page')?.addEventListener('click', () => {
+                    if (this.currentPage > 1) {
+                        this.currentPage--;
+                        this.renderTable();
+                    }
+                });
+
+                document.getElementById('next-page')?.addEventListener('click', () => {
+                    const maxPages = Math.ceil(this.filteredData.length / this.rowsPerPage);
+                    if (this.currentPage < maxPages) {
+                        this.currentPage++;
+                        this.renderTable();
+                    }
+                });
+
+                // Export CSV
+                document.getElementById('export-csv-btn')?.addEventListener('click', () => {
+                    this.exportCSV();
+                });
+            },
+
+            renderTable() {
+                const tbody = document.getElementById('table-body');
+                if (!tbody) return;
+
+                const start = (this.currentPage - 1) * this.rowsPerPage;
+                const end = start + this.rowsPerPage;
+                const pageData = this.filteredData.slice(start, end);
+
+                tbody.innerHTML = '';
+                pageData.forEach(item => {
+                    const row = document.createElement('tr');
+                    const normalized = ((item.frequency / dataStore.words[0].frequency) * 100).toFixed(2);
+                    row.innerHTML = `
+                <td class="col-word">${item.word}</td>
+                <td class="col-frequency">${item.frequency.toLocaleString()}</td>
+                <td class="col-normalized">${normalized}%</td>
+                <td class="col-length">${item.length}</td>
+            `;
+                    tbody.appendChild(row);
+                });
+
+                // Update pagination
+                const maxPages = Math.ceil(this.filteredData.length / this.rowsPerPage);
+                document.getElementById('pagination-info').textContent =
+                    `Page ${this.currentPage} of ${maxPages}`;
+
+                document.getElementById('prev-page').disabled = this.currentPage === 1;
+                document.getElementById('next-page').disabled = this.currentPage === maxPages;
+            },
+
+            exportCSV() {
+                let csv = 'Word,Frequency,% Normalized,Length\n';
+                this.filteredData.forEach(item => {
+                    const normalized = ((item.frequency / dataStore.words[0].frequency) * 100).toFixed(2);
+                    csv += `${item.word},${item.frequency},${normalized},${item.length}\n`;
+                });
+
+                const blob = new Blob([csv], { type: 'text/csv' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'word_analysis.csv';
+                a.click();
+                window.URL.revokeObjectURL(url);
+
+                this.showNotification('CSV exported successfully!', 'success');
+            },
+
+            // ========================================================================
+            // SEARCH & SORT
+            // ========================================================================
+            setupSearchAndSort() {
+                document.getElementById('data-search')?.addEventListener('input', (e) => {
+                    this.searchTerm = e.target.value.toLowerCase();
+                    this.currentPage = 1;
+                    this.applyFilters();
+                });
+
+                document.getElementById('sort-column')?.addEventListener('change', (e) => {
+                    this.sortBy = e.target.value;
+                    this.currentPage = 1;
+                    this.applyFilters();
+                });
+            },
+
+            applyFilters() {
+                // Filter
+                this.filteredData = dataStore.words.filter(item =>
+                    item.word.toLowerCase().includes(this.searchTerm) ||
+                    item.frequency.toString().includes(this.searchTerm) ||
+                    item.length.toString().includes(this.searchTerm)
+                );
+
+                // Sort
+                switch (this.sortBy) {
+                    case 'frequency-desc':
+                        this.filteredData.sort((a, b) => b.frequency - a.frequency);
+                        break;
+                    case 'frequency-asc':
+                        this.filteredData.sort((a, b) => a.frequency - b.frequency);
+                        break;
+                    case 'alphabetical':
+                        this.filteredData.sort((a, b) => a.word.localeCompare(b.word));
+                        break;
+                    case 'length':
+                        this.filteredData.sort((a, b) => b.length - a.length);
+                        break;
+                }
+
+                this.renderTable();
+            },
+
+            // ========================================================================
+            // FILE UPLOAD
+            // ========================================================================
+            setupFileUpload() {
+                const uploadZone = document.getElementById('upload-zone');
+                const fileInput = document.getElementById('file-input');
+                const uploadProgress = document.getElementById('upload-progress');
+                const uploadStatus = document.getElementById('upload-status');
+
+                if (!uploadZone) return;
+
+                // Drag and drop
+                ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                    uploadZone.addEventListener(eventName, preventDefaults, false);
+                });
+
+                function preventDefaults(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+
+                ['dragenter', 'dragover'].forEach(eventName => {
+                    uploadZone.addEventListener(eventName, () => {
+                        uploadZone.classList.add('dragover');
+                    });
+                });
+
+                ['dragleave', 'drop'].forEach(eventName => {
+                    uploadZone.addEventListener(eventName, () => {
+                        uploadZone.classList.remove('dragover');
+                    });
+                });
+
+                uploadZone.addEventListener('drop', (e) => {
+                    const dt = e.dataTransfer;
+                    const files = dt.files;
+                    handleFiles(files);
+                });
+
+                uploadZone.addEventListener('click', () => {
+                    fileInput.click();
+                });
+
+                fileInput.addEventListener('change', (e) => {
+                    handleFiles(e.target.files);
+                });
+
+                const handleFiles = (files) => {
+                    if (files.length === 0) return;
+                    const file = files[0];
+                    UI.simulateUpload(file.name);
+                };
+            },
+
+            simulateUpload(filename) {
+                const uploadZone = document.getElementById('upload-zone');
+                const uploadProgress = document.getElementById('upload-progress');
+                const uploadStatus = document.getElementById('upload-status');
+
+                if (uploadZone) uploadZone.style.display = 'none';
+                if (uploadProgress) uploadProgress.style.display = 'block';
+
+                const uploadFilename = document.getElementById('upload-filename');
+                const uploadPercentage = document.getElementById('upload-percentage');
+                const uploadFill = document.getElementById('upload-fill');
+
+                if (uploadFilename) uploadFilename.textContent = filename;
+
+                let progress = 0;
+                const interval = setInterval(() => {
+                    progress += Math.random() * 30;
+                    if (progress > 100) progress = 100;
+
+                    if (uploadPercentage) uploadPercentage.textContent = Math.floor(progress) + '%';
+                    if (uploadFill) uploadFill.style.width = progress + '%';
+
+                    if (progress === 100) {
+                        clearInterval(interval);
+                        setTimeout(() => {
+                            if (uploadProgress) uploadProgress.style.display = 'none';
+                            if (uploadStatus) uploadStatus.style.display = 'flex';
+
+                            const statusFilename = document.getElementById('status-filename');
+                            if (statusFilename) statusFilename.textContent = `${filename} uploaded successfully`;
+                        }, 500);
+                    }
+                }, 100);
+            },
+
+            // ========================================================================
+            // SPARK SIMULATOR
+            // ========================================================================
+            setupSparkSimulator() {
+                const triggerBtn = document.getElementById('trigger-spark-job');
+                if (!triggerBtn) return;
+
+                triggerBtn.addEventListener('click', () => {
+                    this.runSparkSimulation();
+                });
+            },
+
+            runSparkSimulation() {
+                const job = dataStore.sparkJob;
+                job.status = 'running';
+                this.updateSparkStatus();
+
+                let progress = 0;
+                const simulationTime = 5000; // 5 seconds
+                const step = 100 / (simulationTime / 100);
+
+                const interval = setInterval(() => {
+                    progress += step;
+                    if (progress > 100) progress = 100;
+
+                    // Update metrics
+                    job.progress = Math.floor(progress);
+                    job.jobs = Math.min(Math.floor(progress / 10) + 1, 8);
+                    job.stages = Math.min(Math.floor(progress / 15) + 1, 5);
+                    job.tasks = Math.min(Math.floor(progress / 5), 128);
+                    job.memory = Math.min(Math.floor(progress * 2.56), 256);
+                    job.shuffleRead = Math.min(Math.floor(progress * 1.5), 150);
+                    job.shuffleWrite = Math.min(Math.floor(progress * 1.2), 120);
+                    job.taskTime = Math.max(5000 - (progress * 50), 100);
+
+                    if (progress % 30 === 0) {
+                        job.skew = progress < 50 ? 'Low' : (progress < 80 ? 'Medium' : 'High');
+                    }
+
+                    this.updateSparkUI();
+
+                    if (progress === 100) {
+                        clearInterval(interval);
+                        job.status = 'succeeded';
+                        this.updateSparkStatus();
+                    }
+                }, 100);
+            },
+
+            updateSparkStatus() {
+                const statusBadge = document.getElementById('job-status');
+                const job = dataStore.sparkJob;
+
+                if (!statusBadge) return;
+
+                statusBadge.innerHTML = `<span class="badge ${job.status}">${job.status}</span>`;
+            },
+
+            updateSparkUI() {
+                const job = dataStore.sparkJob;
+
+                // Progress bar
+                const progressFill = document.getElementById('progress-fill');
+                const progressPercentage = document.getElementById('progress-percentage');
+                if (progressFill) progressFill.style.width = job.progress + '%';
+                if (progressPercentage) progressPercentage.textContent = job.progress + '%';
+
+                // Metrics
+                document.getElementById('metric-jobs').textContent = job.jobs;
+                document.getElementById('metric-stages').textContent = job.stages;
+                document.getElementById('metric-tasks').textContent = job.tasks;
+                document.getElementById('metric-memory').textContent = job.memory + ' MB';
+                document.getElementById('metric-shuffle-read').textContent = job.shuffleRead + ' MB';
+                document.getElementById('metric-shuffle-write').textContent = job.shuffleWrite + ' MB';
+                document.getElementById('metric-task-time').textContent = Math.floor(job.taskTime) + ' ms';
+                document.getElementById('metric-skew').textContent = job.skew;
+            },
+
+            // ========================================================================
+            // TOP BAR BUTTONS
+            // ========================================================================
+            setupTopBarButtons() {
+                document.getElementById('upload-file-btn')?.addEventListener('click', () => {
+                    document.getElementById('file-input')?.click();
+                });
+
+                document.getElementById('analyze-url-btn')?.addEventListener('click', () => {
+                    this.switchToPanel('url-analyzer');
+                });
+            },
+
+            switchToPanel(panelName) {
+                const navItem = document.querySelector(`[data-panel="${panelName}"]`);
+                if (navItem) {
+                    navItem.click();
+                }
+            },
+
+            // ========================================================================
+            // URL ANALYZER
+            // ========================================================================
+            setupURLAnalyzer() {
+                const analyzeBtn = document.getElementById('analyze-url-exec-btn');
+                if (!analyzeBtn) return;
+
+                analyzeBtn.addEventListener('click', () => {
+                    this.analyzeURL();
+                });
+            },
+
+            analyzeURL() {
+                const urlInput = document.getElementById('url-input');
+                const urlResults = document.getElementById('url-results');
+
+                if (!urlInput || !urlResults) return;
+
+                const url = urlInput.value.trim();
+                if (!url) {
+                    this.showNotification('Please enter a valid URL', 'error');
+                    return;
+                }
+
+                // Simulate loading
+                const originalText = document.getElementById('analyze-url-exec-btn').textContent;
+                const btn = document.getElementById('analyze-url-exec-btn');
+                btn.textContent = '⏳ Analyzing...';
+                btn.disabled = true;
+
+                setTimeout(() => {
+                    // Mock results
+                    document.getElementById('result-url').textContent = url;
+                    document.getElementById('result-words').textContent = (8432 + Math.floor(Math.random() * 2000)).toLocaleString();
+                    document.getElementById('result-unique').textContent = (2156 + Math.floor(Math.random() * 500)).toLocaleString();
+
+                    urlResults.style.display = 'grid';
+                    btn.textContent = originalText;
+                    btn.disabled = false;
+
+                    this.showNotification('URL analyzed successfully!', 'success');
+                }, 2000);
+            },
+
+            // ========================================================================
+            // UTILITIES
+            // ========================================================================
+            showNotification(message, type = 'info') {
+                const notification = document.createElement('div');
+                notification.className = `notification notification-${type}`;
+                notification.textContent = message;
+                notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 1rem 1.5rem;
+            background-color: ${type === 'success' ? '#DCFCE7' : type === 'error' ? '#FEE2E2' : '#E8F4F8'};
+            color: ${type === 'success' ? '#166534' : type === 'error' ? '#991B1B' : '#0C66E4'};
+            border: 1px solid ${type === 'success' ? '#86EFAC' : type === 'error' ? '#FECACA' : '#CBD5E1'};
+            border-radius: 8px;
+            z-index: 2000;
+            animation: slideInRight 0.3s ease;
+        `;
+
+                document.body.appendChild(notification);
+
+                setTimeout(() => {
+                    notification.style.animation = 'slideOutRight 0.3s ease';
+                    setTimeout(() => {
+                        notification.remove();
+                    }, 300);
+                }, 3000);
+            },
+        };
+
+        // ============================================================================
+        // GLOBAL FUNCTIONS
+        // ============================================================================
+
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.classList.remove('active');
+            }
+        }
+
+        function analyzeUrlModal() {
+            const input = document.getElementById('url-modal-input');
+            if (input && input.value) {
+                document.getElementById('url-input').value = input.value;
+                closeModal('url-modal');
+                UI.switchToPanel('url-analyzer');
+                UI.analyzeURL();
+            }
+        }
+
+        // ============================================================================
+        // INITIALIZATION
+        // ============================================================================
+
+        document.addEventListener('DOMContentLoaded', () => {
+            UI.init();
+
+            // Add animation keyframes to style
+            const style = document.createElement('style');
+            style.textContent = `
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(100px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes slideOutRight {
+            from {
+                opacity: 1;
+                transform: translateX(0);
+            }
+            to {
+                opacity: 0;
+                transform: translateX(100px);
+            }
+        }
+    `;
+            document.head.appendChild(style);
+
+            console.log('✓ Word Intelligence & PySpark Analytics Platform initialized');
+            console.log('✓ Dashboard loaded successfully');
+            console.log('✓ Features available: File Upload, URL Analysis, Spark Execution, Raw Data');
+        });
+
+
+    </script>
+</body>
+
+</html>
