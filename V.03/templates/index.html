@@ -280,12 +280,6 @@
             border-left-color: #0C66E4;
         }
 
-        .nav-icon {
-            font-size: 1.25rem;
-            display: flex;
-            align-items: center;
-        }
-
         .nav-label {
             flex: 1;
             text-align: left;
@@ -2883,6 +2877,227 @@
             overflow: hidden;
             text-overflow: ellipsis;
         }
+
+        /* ============================================================================
+   SPARK UI SECTION STYLES
+   ============================================================================ */
+        .spark-ui-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .control-group {
+            background: linear-gradient(135deg, #F8FAFC 0%, #FFFFFF 100%);
+            border: 1px solid #E2E8F0;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+            transition: all 0.3s ease;
+        }
+
+        .control-group:hover {
+            border-color: #CBD5E1;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .control-label {
+            margin-bottom: 1rem;
+        }
+
+        .control-label h3 {
+            margin-bottom: 0.25rem;
+            color: #1E293B;
+        }
+
+        .app-ui-inputs,
+        .history-ui-inputs {
+            display: flex;
+            gap: 1rem;
+            align-items: flex-end;
+            flex-wrap: wrap;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .input-group label {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #475569;
+        }
+
+        .input-control {
+            padding: 0.75rem 1rem;
+            border: 1px solid #E2E8F0;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 0.95rem;
+            background-color: #FFFFFF;
+            transition: all 0.2s ease;
+            min-width: 150px;
+        }
+
+        .input-control:focus {
+            outline: none;
+            border-color: #0C66E4;
+            box-shadow: 0 0 0 3px rgba(12, 102, 228, 0.1);
+        }
+
+        .spark-ui-info-section {
+            margin: 2rem 0;
+        }
+
+        .spark-ui-info-section h3 {
+            margin-bottom: 1rem;
+        }
+
+        .info-cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .info-card {
+            background: linear-gradient(135deg, #FFFFFF 0%, #F8FAFC 100%);
+            border: 1px solid #E2E8F0;
+            border-radius: 8px;
+            padding: 1.25rem;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .info-card:hover {
+            border-color: #CBD5E1;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            transform: translateY(-2px);
+        }
+
+        .info-label {
+            font-size: 0.875rem;
+            color: #64748B;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+
+        .info-value {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #0C66E4;
+        }
+
+        .spark-ui-quick-access {
+            margin: 2rem 0;
+        }
+
+        .spark-ui-quick-access h3 {
+            margin-bottom: 1rem;
+        }
+
+        .quick-links-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 1rem;
+        }
+
+        .quick-link-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 1.25rem 1rem;
+            background: linear-gradient(135deg, #FFFFFF 0%, #F8FAFC 100%);
+            border: 2px solid #E2E8F0;
+            border-radius: 8px;
+            text-decoration: none;
+            color: #1E293B;
+            font-weight: 500;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .quick-link-btn:hover {
+            border-color: #0C66E4;
+            background: linear-gradient(135deg, #F0F7FF 0%, #E8EFFE 100%);
+            color: #0C66E4;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(12, 102, 228, 0.15);
+        }
+
+        .quick-link-btn .icon {
+            font-size: 1.5rem;
+        }
+
+        .spark-ui-frame-section {
+            margin: 2rem 0;
+        }
+
+        .spark-ui-frame-section h3 {
+            margin-bottom: 1rem;
+        }
+
+        .frame-controls {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .frame-controls .input-control {
+            flex: 1;
+            min-width: 300px;
+        }
+
+        .iframe-container {
+            position: relative;
+            border: 1px solid #E2E8F0;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #FFFFFF;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            height: 600px;
+        }
+
+        .spark-ui-iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            display: block;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .spark-ui-iframe.loaded {
+            opacity: 1;
+        }
+
+        .iframe-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #F8FAFC 0%, #FFFFFF 100%);
+            color: #64748B;
+            font-size: 1rem;
+            text-align: center;
+            padding: 2rem;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .iframe-overlay.hidden {
+            display: none;
+        }
     </style>
 </head>
 
@@ -2891,19 +3106,15 @@
     <div class="top-bar">
         <div class="top-bar-left">
             <h1 class="platform-title">
-                <span class="icon">∞</span>
+                <span class="icon"> </span>
                 Word Intelligence & PySpark Analytics
             </h1>
         </div>
         <div class="top-bar-right">
-            <button class="btn btn-secondary" id="analyze-url-btn">
-                <span class="icon">🔗</span>
-                Analyze URL
-            </button>
-            <button class="btn btn-primary" id="upload-file-btn">
-                <span class="icon">📤</span>
-                Upload File
-            </button>
+            <span class="btn btn-secondary" id="analyze-url-btn">
+                <span class="icon">⚡</span>
+                Apache Spark
+            </span>
         </div>
     </div>
 
@@ -2912,7 +3123,6 @@
         <aside class="sidebar">
             <nav class="nav-menu">
                 <button class="nav-item active" data-panel="home">
-                    <!-- <span class="nav-icon">⚡</span> -->
                     <span class="nav-label">Home</span>
                 </button>
                 <button class="nav-item" data-panel="dashboard">
@@ -2924,7 +3134,7 @@
                 <button class="nav-item" data-panel="visualizations">
                     <span class="nav-label">Visualizations</span>
                 </button>
-                <button class="nav-item" data-panel="spark">
+                <button class="nav-item" data-panel="pyspark">
                     <span class="nav-label">Pyspark Execution</span>
                 </button>
                 <button class="nav-item" data-panel="spark-ui">
@@ -3471,7 +3681,7 @@
             </section>
 
             <!-- PySpark Execution Panel -->
-            <section id="panel-spark" class="panel">
+            <section id="panel-pyspark" class="panel">
                 <div class="panel-header">
                     <h2>PySpark Cluster Execution</h2>
                     <p class="text-muted">Real-time Spark job monitoring and DAG visualization</p>
@@ -3606,6 +3816,141 @@
                         </svg>
                     </div>
                 </div>
+            </section>
+
+            <!-- Spark UI -->
+            <section id="panel-spark-ui" class="panel">
+                <div class="panel-header">
+                    <h2>Spark UI Dashboard</h2>
+                    <p class="text-muted">Monitor and access Apache Spark jobs and cluster metrics</p>
+                </div>
+
+                <!-- Spark UI Access Controls -->
+                <div class="spark-ui-controls">
+                    <div class="control-group">
+                        <div class="control-label">
+                            <h3>Spark Master Web UI</h3>
+                            <p class="text-muted">Access the Spark Master dashboard</p>
+                        </div>
+                        <button class="btn btn-primary" id="open-spark-master-ui">
+                            <span class="icon">🔗</span>
+                            Open Spark Master UI (Port 8080)
+                        </button>
+                    </div>
+
+                    <div class="control-group">
+                        <div class="control-label">
+                            <h3>Spark Application UI</h3>
+                            <p class="text-muted">View current Spark application and jobs</p>
+                        </div>
+                        <div class="app-ui-inputs">
+                            <div class="input-group">
+                                <label for="spark-app-host">Host:</label>
+                                <input type="text" id="spark-app-host" class="input-control" value="localhost" placeholder="localhost">
+                            </div>
+                            <div class="input-group">
+                                <label for="spark-app-port">Port:</label>
+                                <input type="number" id="spark-app-port" class="input-control" value="4040" placeholder="4040">
+                            </div>
+                            <button class="btn btn-primary" id="open-spark-app-ui">
+                                <span class="icon">🔗</span>
+                                Open Application UI
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <div class="control-label">
+                            <h3>Spark History Server</h3>
+                            <p class="text-muted">View completed jobs and historical data</p>
+                        </div>
+                        <div class="history-ui-inputs">
+                            <div class="input-group">
+                                <label for="spark-history-host">Host:</label>
+                                <input type="text" id="spark-history-host" class="input-control" value="localhost" placeholder="localhost">
+                            </div>
+                            <div class="input-group">
+                                <label for="spark-history-port">Port:</label>
+                                <input type="number" id="spark-history-port" class="input-control" value="18080" placeholder="18080">
+                            </div>
+                            <button class="btn btn-primary" id="open-spark-history-ui">
+                                <span class="icon">🔗</span>
+                                Open History Server
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Current Job Information -->
+                <div class="spark-ui-info-section">
+                    <h3>Current Job Information</h3>
+                    <div class="info-cards-grid">
+                        <div class="info-card">
+                            <div class="info-label">Active Jobs</div>
+                            <div class="info-value" id="spark-active-jobs">0</div>
+                        </div>
+                        <div class="info-card">
+                            <div class="info-label">Completed Jobs</div>
+                            <div class="info-value" id="spark-completed-jobs">0</div>
+                        </div>
+                        <div class="info-card">
+                            <div class="info-label">Failed Jobs</div>
+                            <div class="info-value" id="spark-failed-jobs">0</div>
+                        </div>
+                        <div class="info-card">
+                            <div class="info-label">Execution Time</div>
+                            <div class="info-value" id="spark-execution-time">0s</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Access Links -->
+                <div class="spark-ui-quick-access">
+                    <h3>Quick Access</h3>
+                    <div class="quick-links-grid">
+                        <a href="javascript:void(0)" class="quick-link-btn" id="quick-link-jobs" title="View all jobs">
+                            <span class="icon">📊</span>
+                            <span>Jobs</span>
+                        </a>
+                        <a href="javascript:void(0)" class="quick-link-btn" id="quick-link-stages" title="View execution stages">
+                            <span class="icon">⚙️</span>
+                            <span>Stages</span>
+                        </a>
+                        <a href="javascript:void(0)" class="quick-link-btn" id="quick-link-executors" title="View executors">
+                            <span class="icon">🖥️</span>
+                            <span>Executors</span>
+                        </a>
+                        <a href="javascript:void(0)" class="quick-link-btn" id="quick-link-storage" title="View storage info">
+                            <span class="icon">💾</span>
+                            <span>Storage</span>
+                        </a>
+                        <a href="javascript:void(0)" class="quick-link-btn" id="quick-link-environment" title="View environment">
+                            <span class="icon">🔧</span>
+                            <span>Environment</span>
+                        </a>
+                        <a href="javascript:void(0)" class="quick-link-btn" id="quick-link-logs" title="View logs">
+                            <span class="icon">📝</span>
+                            <span>Logs</span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Embedded Spark UI Frame -->
+                <div class="spark-ui-frame-section">
+                    <h3>Spark UI Frame</h3>
+                    <div class="frame-controls">
+                        <input type="text" id="spark-frame-url" class="input-control" placeholder="Enter Spark UI URL (e.g., http://localhost:4040)" value="http://localhost:4040">
+                        <button class="btn btn-secondary" id="load-spark-frame">Load UI</button>
+                        <button class="btn btn-secondary" id="refresh-spark-frame">Refresh</button>
+                    </div>
+                    <div class="iframe-container">
+                        <iframe id="spark-ui-iframe" class="spark-ui-iframe" title="Spark UI"></iframe>
+                        <div class="iframe-overlay" id="iframe-overlay">
+                            <p>Enter a Spark UI URL and click "Load UI" to display the interface</p>
+                        </div>
+                    </div>
+                </div>
+
             </section>
 
             <!-- Raw Data Panel -->
@@ -3822,6 +4167,113 @@
                 this.setupSparkSimulator();
                 this.setupTopBarButtons();
                 this.setupURLAnalyzer();
+                this.setupHistory();
+                this.initSparkUI();
+            },
+
+            // ========================================================================
+            // SPARK UI SETUP
+            // ========================================================================
+            initSparkUI() {
+                // Spark Master UI Button
+                const sparkMasterBtn = document.getElementById('open-spark-master-ui');
+                if (sparkMasterBtn) {
+                    sparkMasterBtn.addEventListener('click', () => {
+                        window.open('http://localhost:8080', 'spark_master', 'width=1200,height=800');
+                    });
+                }
+
+                // Spark Application UI Button
+                const sparkAppBtn = document.getElementById('open-spark-app-ui');
+                if (sparkAppBtn) {
+                    sparkAppBtn.addEventListener('click', () => {
+                        const host = document.getElementById('spark-app-host').value || 'localhost';
+                        const port = document.getElementById('spark-app-port').value || '4040';
+                        window.open(`http://${host}:${port}`, 'spark_app', 'width=1200,height=800');
+                    });
+                }
+
+                // Spark History Server Button
+                const sparkHistoryBtn = document.getElementById('open-spark-history-ui');
+                if (sparkHistoryBtn) {
+                    sparkHistoryBtn.addEventListener('click', () => {
+                        const host = document.getElementById('spark-history-host').value || 'localhost';
+                        const port = document.getElementById('spark-history-port').value || '18080';
+                        window.open(`http://${host}:${port}`, 'spark_history', 'width=1200,height=800');
+                    });
+                }
+
+                // Load Spark UI Frame Button
+                const loadFrameBtn = document.getElementById('load-spark-frame');
+                if (loadFrameBtn) {
+                    loadFrameBtn.addEventListener('click', () => {
+                        const url = document.getElementById('spark-frame-url').value;
+                        if (!url) {
+                            alert('Please enter a valid Spark UI URL');
+                            return;
+                        }
+                        this.loadSparkUIFrame(url);
+                    });
+                }
+
+                // Refresh Spark UI Frame Button
+                const refreshFrameBtn = document.getElementById('refresh-spark-frame');
+                if (refreshFrameBtn) {
+                    refreshFrameBtn.addEventListener('click', () => {
+                        const iframe = document.getElementById('spark-ui-iframe');
+                        if (iframe.src) {
+                            iframe.src = iframe.src;
+                        }
+                    });
+                }
+
+                // Quick Access Links
+                const quickLinks = {
+                    'quick-link-jobs': '/jobs',
+                    'quick-link-stages': '/stages',
+                    'quick-link-executors': '/executors',
+                    'quick-link-storage': '/storage',
+                    'quick-link-environment': '/environment',
+                    'quick-link-logs': '/logs'
+                };
+
+                Object.keys(quickLinks).forEach(id => {
+                    const link = document.getElementById(id);
+                    if (link) {
+                        link.addEventListener('click', (e) => {
+                            e.preventDefault();
+                            const host = document.getElementById('spark-app-host').value || 'localhost';
+                            const port = document.getElementById('spark-app-port').value || '4040';
+                            const url = `http://${host}:${port}${quickLinks[id]}`;
+                            window.open(url, id, 'width=1200,height=800');
+                        });
+                    }
+                });
+            },
+
+            loadSparkUIFrame(url) {
+                const iframe = document.getElementById('spark-ui-iframe');
+                const overlay = document.getElementById('iframe-overlay');
+                
+                // Remove protocol if only domain is provided
+                let finalUrl = url;
+                if (!finalUrl.startsWith('http://') && !finalUrl.startsWith('https://')) {
+                    finalUrl = 'http://' + finalUrl;
+                }
+
+                iframe.src = finalUrl;
+                
+                // Handle iframe load
+                iframe.onload = () => {
+                    iframe.classList.add('loaded');
+                    overlay.classList.add('hidden');
+                };
+
+                // Handle iframe error (CORS or not found)
+                iframe.onerror = () => {
+                    alert(`Failed to load Spark UI from ${finalUrl}. Make sure the URL is correct and accessible.`);
+                    overlay.classList.remove('hidden');
+                };
             },
 
             // ========================================================================
@@ -4170,6 +4622,141 @@
                 });
             },
 
+            // ========================================================================
+            // HISTORY TAB
+            // ========================================================================
+            setupHistory() {
+                // Refresh button
+                document.getElementById('refresh-btn')?.addEventListener('click', () => {
+                    this.loadHistoryData();
+                });
+
+                // Filter buttons
+                document.querySelectorAll('.filter-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        // Remove active class from all
+                        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                        // Add active to clicked
+                        e.target.classList.add('active');
+                        // Filter data
+                        const filter = e.target.dataset.filter;
+                        this.filterHistoryByType(filter);
+                    });
+                });
+
+                // Search input
+                document.getElementById('history-search')?.addEventListener('input', (e) => {
+                    this.searchHistory(e.target.value);
+                });
+
+                // Time range selector
+                document.getElementById('time-range')?.addEventListener('change', (e) => {
+                    this.filterHistoryByTime(e.target.value);
+                });
+
+                // Load initial history data
+                this.loadHistoryData();
+            },
+
+            loadHistoryData() {
+                const tbody = document.getElementById('history-tbody');
+                const emptyState = document.querySelector('.empty-state');
+                
+                if (!tbody) return;
+
+                // Mock history data
+                const historyData = [
+                    { id: 1, type: 'file', name: 'AlgorithmsNotesForProfessionals.pdf', date: '2024-12-13', totalWords: 45382, uniqueWords: 8934, status: 'completed' },
+                    { id: 2, type: 'file', name: 'long-doc.txt', date: '2024-12-12', totalWords: 32156, uniqueWords: 6721, status: 'completed' },
+                    { id: 3, type: 'url', name: 'https://example.com/article', date: '2024-12-11', totalWords: 8432, uniqueWords: 2156, status: 'completed' },
+                    { id: 4, type: 'spark', name: 'Project_b Analysis Job', date: '2024-12-10', totalWords: 28405, uniqueWords: 5839, status: 'completed' },
+                    { id: 5, type: 'file', name: 'sample1.txt', date: '2024-12-09', totalWords: 12045, uniqueWords: 3421, status: 'completed' },
+                ];
+
+                tbody.innerHTML = '';
+                
+                if (historyData.length === 0) {
+                    if (emptyState) emptyState.style.display = 'flex';
+                    return;
+                }
+
+                if (emptyState) emptyState.style.display = 'none';
+
+                historyData.forEach((item, index) => {
+                    const row = document.createElement('tr');
+                    const typeIcon = item.type === 'file' ? '📁' : item.type === 'url' ? '🌐' : '⚡';
+                    
+                    row.innerHTML = `
+                        <td>${index + 1}</td>
+                        <td>${typeIcon} ${item.type.charAt(0).toUpperCase() + item.type.slice(1)}</td>
+                        <td>${item.name}</td>
+                        <td>${item.date}</td>
+                        <td>${item.totalWords.toLocaleString()}</td>
+                        <td>${item.uniqueWords.toLocaleString()}</td>
+                        <td><span class="status-badge status-${item.status}">${item.status}</span></td>
+                        <td>
+                            <button class="btn btn-sm btn-secondary" onclick="alert('View details for ${item.name}')">View</button>
+                            <button class="btn btn-sm btn-secondary" onclick="alert('Export for ${item.name}')">Export</button>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            },
+
+            filterHistoryByType(type) {
+                const tbody = document.getElementById('history-tbody');
+                if (!tbody) return;
+
+                // Show notification
+                const filterLabel = {
+                    'all': 'All Records',
+                    'files': 'File Uploads',
+                    'urls': 'URL Analyses',
+                    'spark': 'PySpark Jobs'
+                };
+                this.showNotification(`Filtered to show: ${filterLabel[type]}`, 'info');
+                
+                // In a real app, would filter the data here
+                this.loadHistoryData();
+            },
+
+            filterHistoryByTime(timeRange) {
+                const labels = {
+                    'all': 'All Time',
+                    'today': 'Today',
+                    'week': 'This Week',
+                    'month': 'This Month'
+                };
+                this.showNotification(`Showing records from: ${labels[timeRange]}`, 'info');
+                
+                // In a real app, would filter the data here
+                this.loadHistoryData();
+            },
+
+            searchHistory(searchTerm) {
+                const tbody = document.getElementById('history-tbody');
+                if (!tbody) return;
+
+                const rows = tbody.querySelectorAll('tr');
+                let visibleCount = 0;
+
+                rows.forEach(row => {
+                    const text = row.textContent.toLowerCase();
+                    if (searchTerm === '' || text.includes(searchTerm.toLowerCase())) {
+                        row.style.display = '';
+                        visibleCount++;
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+
+                // Show/hide empty state
+                const emptyState = document.querySelector('.empty-state');
+                if (emptyState) {
+                    emptyState.style.display = visibleCount === 0 ? 'flex' : 'none';
+                }
+            },
+
             analyzeURL() {
                 const urlInput = document.getElementById('url-input');
                 const urlResults = document.getElementById('url-results');
@@ -4288,11 +4875,8 @@
     `;
             document.head.appendChild(style);
 
-            console.log('✓ Word Intelligence & PySpark Analytics Platform initialized');
-            console.log('✓ Dashboard loaded successfully');
-            console.log('✓ Features available: File Upload, URL Analysis, Spark Execution, Raw Data');
-        });
 
+        });
 
     </script>
 </body>
