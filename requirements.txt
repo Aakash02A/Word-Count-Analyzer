@@ -1,0 +1,9 @@
+flask
+textblob
+pandas
+requests
+beautifulsoup4
+pyspark
+numpy
+pypdf
+python-docx
