@@ -221,11 +221,16 @@ class TextAnalyzer:
             
             # Job 1: Create RDD and parallelize data
             text_rdd = sc.parallelize(lines, numPartitions=4)
-            text_rdd.cache()  # Cache for reuse
+            text_rdd.setName("TextLines")  # Name for UI visibility
+            text_rdd.persist()  # Persist with default MEMORY_ONLY level
+            
+            # Force materialization by counting lines
+            line_count = text_rdd.count()
+            
             execution_details['jobs'].append({
                 'job_id': 'Job 1',
-                'description': 'Parallelize text data',
-                'stages': ['Stage 1: Data partitioning (4 partitions)'],
+                'description': 'Parallelize and cache text data',
+                'stages': ['Stage 1: Data partitioning and count (4 partitions)'],
                 'tasks': 4,
                 'status': 'completed'
             })
@@ -237,12 +242,18 @@ class TextAnalyzer:
                 .flatMap(lambda line: line.split()) \
                 .filter(lambda word: word and len(word) > 2 and word not in self.stopwords)
             
+            words_rdd.setName("FilteredWords")  # Name for UI visibility
+            words_rdd.persist()  # Persist filtered words
+            
+            # Force materialization
+            total_word_count = words_rdd.count()
+            
             execution_details['jobs'].append({
                 'job_id': 'Job 2',
                 'description': 'Tokenize and filter words',
                 'stages': [
                     'Stage 2: FlatMap transformation',
-                    'Stage 3: Filter stopwords and short words'
+                    'Stage 3: Filter stopwords and count'
                 ],
                 'tasks': 8,
                 'status': 'completed'
@@ -250,18 +261,23 @@ class TextAnalyzer:
             execution_details['total_stages'] += 2
             execution_details['total_tasks'] += 8
             
-            # Job 3: Word count aggregation
+            # Job 3: Word count aggregation with explicit stages
             word_counts = words_rdd.map(lambda word: (word, 1)) \
-                .reduceByKey(lambda a, b: a + b) \
-                .sortBy(lambda x: x[1], ascending=False)
+                .reduceByKey(lambda a, b: a + b)
+            
+            word_counts.setName("WordCounts")  # Name for UI visibility
+            word_counts.persist()  # Persist word counts
+            
+            # Force materialization and sorting
+            sorted_counts = word_counts.sortBy(lambda x: x[1], ascending=False)
             
             execution_details['jobs'].append({
                 'job_id': 'Job 3',
-                'description': 'Count and sort word frequencies',
+                'description': 'Count and aggregate word frequencies',
                 'stages': [
                     'Stage 4: Map to key-value pairs',
-                    'Stage 5: Reduce by key (shuffle)',
-                    'Stage 6: Sort by count'
+                    'Stage 5: ReduceByKey (shuffle operation)',
+                    'Stage 6: Sort by frequency'
                 ],
                 'tasks': 16,
                 'status': 'completed'
@@ -269,15 +285,15 @@ class TextAnalyzer:
             execution_details['total_stages'] += 3
             execution_details['total_tasks'] += 16
             
-            # Job 4: Collect results
-            top_results = word_counts.take(50)
+            # Job 4: Collect top results
+            top_results = sorted_counts.take(50)
             top_words = [w[0] for w in top_results]
             top_counts = [w[1] for w in top_results]
             
             execution_details['jobs'].append({
                 'job_id': 'Job 4',
-                'description': 'Collect top 50 results',
-                'stages': ['Stage 7: Collect action'],
+                'description': 'Collect top 50 word frequencies',
+                'stages': ['Stage 7: Take top results'],
                 'tasks': 4,
                 'status': 'completed'
             })
@@ -286,7 +302,7 @@ class TextAnalyzer:
             
             # Total and unique word counts
             total_words = len(cleaned.split())
-            unique_words = len(top_words)
+            unique_words = word_counts.count()  # Use Spark count for accuracy
             
             # Calculate execution time
             end_time = time.time()

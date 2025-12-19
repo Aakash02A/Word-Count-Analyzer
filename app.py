@@ -30,7 +30,7 @@ db.init_db()
 
 # Initialize Spark Session with proper configuration
 spark = None
-ENABLE_PYSPARK = os.environ.get('ENABLE_PYSPARK', 'False').lower() == 'true'  # Disabled by default
+ENABLE_PYSPARK = os.environ.get('ENABLE_PYSPARK', 'True').lower() == 'true'  # Enabled by default
 
 # To enable PySpark and Spark UI:
 # 1. Set environment variable: ENABLE_PYSPARK=True
@@ -122,34 +122,53 @@ def analyze_file():
                 reader = PdfReader(file)
                 text = []
                 for page in reader.pages:
-                    text.append(page.extract_text() or "")
+                    extracted = page.extract_text()
+                    if extracted:
+                        text.append(extracted)
                 content = "\n".join(text)
+                logger.info(f"PDF extracted: {len(content)} characters from {len(reader.pages)} pages")
             except Exception as e:
                 logger.error(f"Error parsing PDF: {e}")
                 spark_state['status'] = 'error'
-                return jsonify({'error': 'Failed to read PDF file'}), 400
+                return jsonify({'error': f'Failed to read PDF file: {str(e)}'}), 400
                 
         elif filename.endswith('.docx'):
             try:
                 doc = docx.Document(file)
                 text = []
                 for para in doc.paragraphs:
-                    text.append(para.text)
+                    if para.text.strip():
+                        text.append(para.text)
                 content = "\n".join(text)
+                logger.info(f"DOCX extracted: {len(content)} characters from {len(doc.paragraphs)} paragraphs")
             except Exception as e:
                 logger.error(f"Error parsing DOCX: {e}")
                 spark_state['status'] = 'error'
-                return jsonify({'error': 'Failed to read DOCX file'}), 400
+                return jsonify({'error': f'Failed to read DOCX file: {str(e)}'}), 400
                 
         else:
             # Basic text file fallback
             try:
-                content = file.read().decode('utf-8')
-            except UnicodeDecodeError:
-                file.seek(0)
-                content = file.read().decode('latin-1')
+                file_content = file.read()
+                if not file_content:
+                    logger.error("File read returned empty bytes")
+                    spark_state['status'] = 'error'
+                    return jsonify({'error': 'File appears to be empty'}), 400
+                    
+                try:
+                    content = file_content.decode('utf-8')
+                except UnicodeDecodeError:
+                    logger.info("UTF-8 decode failed, trying latin-1")
+                    content = file_content.decode('latin-1', errors='ignore')
+                
+                logger.info(f"Text file extracted: {len(content)} characters")
+            except Exception as e:
+                logger.error(f"Error reading text file: {e}")
+                spark_state['status'] = 'error'
+                return jsonify({'error': f'Failed to read text file: {str(e)}'}), 400
         
         if not content.strip():
+            logger.error(f"Content is empty after extraction. Filename: {filename}, Content length: {len(content)}")
             spark_state['status'] = 'error'
             return jsonify({'error': 'File is empty or text could not be extracted'}), 400
 

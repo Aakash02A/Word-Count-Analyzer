@@ -4305,20 +4305,7 @@
                         if (val) {
                             const words = val.split(',').map(s => s.trim().toLowerCase()).filter(s => s);
                             this.vizStopwords = new Set(words);
-                            stopwordInput.value = '';
                             clearStopwordBtn.classList.remove('hidden');
-                            this.updateVisualizationData();
-                        }
-                    });
-                }
-                
-                // Real-time stopword filtering
-                if (stopwordInput) {
-                    stopwordInput.addEventListener('input', (e) => {
-                        const val = e.target.value.trim();
-                        if (val) {
-                            const words = val.split(',').map(s => s.trim().toLowerCase()).filter(s => s);
-                            this.vizStopwords = new Set(words);
                             this.updateVisualizationData();
                         }
                     });
@@ -4349,17 +4336,6 @@
                     });
                 }
 
-                // Real-time search word filtering
-                if (searchInput) {
-                    searchInput.addEventListener('input', (e) => {
-                        const val = e.target.value.trim().toLowerCase();
-                        if (val) {
-                            this.vizSearchTerm = val;
-                            this.updateVisualizationData();
-                        }
-                    });
-                }
-
                 if (clearSearchBtn) {
                     clearSearchBtn.addEventListener('click', () => {
                         this.vizSearchTerm = null;
@@ -4381,25 +4357,21 @@
                 // Apply filters
                 let processedData = [...dataSrc];
 
-                // Filter Stopwords (using vizStopwords or input)
-                const input = document.getElementById('stopword-input');
-                const stopwords = new Set(input ? input.value.toLowerCase().split(',').map(s => s.trim()) : []);
-
-                if (stopwords.size > 0 && !(stopwords.size === 1 && stopwords.has(''))) {
-                    processedData = processedData.filter(w => !stopwords.has(w.word.toLowerCase()));
+                // Filter Stopwords - Use stored vizStopwords property
+                if (this.vizStopwords && this.vizStopwords.size > 0) {
+                    processedData = processedData.filter(w => !this.vizStopwords.has(w.word.toLowerCase()));
                     const af = document.getElementById('active-filter');
-                    if (af) af.textContent = `Exclude: ${Array.from(stopwords).join(', ')}`;
+                    if (af) af.textContent = `Exclude: ${Array.from(this.vizStopwords).join(', ')}`;
                 } else {
                     const af = document.getElementById('active-filter');
                     if (af) af.textContent = 'None';
                 }
 
-                const searchInput = document.getElementById('search-word');
-                const searchWord = searchInput ? searchInput.value.toLowerCase().trim() : '';
-                if (searchWord) {
-                    processedData = processedData.filter(w => w.word.toLowerCase().includes(searchWord));
+                // Search Word - Use stored vizSearchTerm property
+                if (this.vizSearchTerm) {
+                    processedData = processedData.filter(w => w.word.toLowerCase().includes(this.vizSearchTerm));
                     const af = document.getElementById('active-filter');
-                    if (af) af.textContent = `Search: "${searchWord}"`;
+                    if (af) af.textContent = `Search: "${this.vizSearchTerm}"`;
                 }
 
                 // Update filtered count
@@ -4608,6 +4580,24 @@
                 const topWords = words.slice(0, 15);
                 const labels = topWords.map(w => w.word);
                 const data = topWords.map(w => w.frequency);
+                
+                // Store reference to vizSearchTerm for use in callbacks
+                const searchTerm = this.vizSearchTerm;
+
+                // Highlight searched words with different color
+                const backgroundColor = topWords.map(w => {
+                    if (searchTerm && w.word.toLowerCase().includes(searchTerm)) {
+                        return '#F59E0B'; // Amber color for highlighted/searched words
+                    }
+                    return '#3B82F6'; // Default blue
+                });
+
+                const borderColor = topWords.map(w => {
+                    if (searchTerm && w.word.toLowerCase().includes(searchTerm)) {
+                        return '#D97706'; // Darker amber border
+                    }
+                    return '#1E40AF'; // Default dark blue
+                });
 
                 const config = {
                     type: 'bar',
@@ -4616,9 +4606,9 @@
                         datasets: [{
                             label: 'Word Frequency',
                             data: data,
-                            backgroundColor: '#3B82F6',
-                            borderColor: '#1E40AF',
-                            borderWidth: 0,
+                            backgroundColor: backgroundColor,
+                            borderColor: borderColor,
+                            borderWidth: 2,
                             borderRadius: 4
                         }]
                     },
@@ -4629,6 +4619,13 @@
                         plugins: {
                             legend: {
                                 display: false
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return 'Frequency: ' + context.parsed.x;
+                                    }
+                                }
                             }
                         },
                         scales: {
@@ -4644,7 +4641,9 @@
                             },
                             y: {
                                 ticks: {
-                                    font: { size: 12 }
+                                    font: { 
+                                        size: 12
+                                    }
                                 },
                                 grid: {
                                     display: false,
@@ -4684,16 +4683,37 @@
                 const top = words.slice(0, 8);
                 if (top.length === 0) return;
 
+                // Store search term for use in mapping
+                const searchTerm = this.vizSearchTerm;
+
+                // Highlight searched words with different color
+                const backgroundColor = top.map((w, i) => {
+                    if (searchTerm && w.word.toLowerCase().includes(searchTerm)) {
+                        return '#F59E0B'; // Amber color for highlighted/searched words
+                    }
+                    return `hsl(${200 + i * 20}, 70%, 60%)`;
+                });
+
                 const config = {
                     type: 'doughnut',
                     data: {
                         labels: top.map(w => w.word),
                         datasets: [{
                             data: top.map(w => w.frequency),
-                            backgroundColor: top.map((_, i) => `hsl(${200 + i * 20}, 70%, 60%)`)
+                            backgroundColor: backgroundColor,
+                            borderWidth: 2,
+                            borderColor: '#fff'
                         }]
                     },
-                    options: { maintainAspectRatio: false, responsive: true }
+                    options: { 
+                        maintainAspectRatio: false, 
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                position: 'bottom'
+                            }
+                        }
+                    }
                 };
 
                 this.createChart('pieChart', config);
@@ -4733,6 +4753,17 @@
                     return (cumulative / total) * 100;
                 });
 
+                // Store search term for use in mapping
+                const searchTerm = this.vizSearchTerm;
+
+                // Highlight searched words with different color
+                const backgroundColor = top.map(w => {
+                    if (searchTerm && w.word.toLowerCase().includes(searchTerm)) {
+                        return '#F59E0B'; // Amber color for highlighted/searched words
+                    }
+                    return '#0EA5E9';
+                });
+
                 const config = {
                     type: 'bar',
                     data: {
@@ -4743,13 +4774,17 @@
                                 label: 'Cumulative %',
                                 data: percentages,
                                 borderColor: '#EF4444',
-                                yAxisID: 'y1'
+                                backgroundColor: '#FEE2E2',
+                                fill: false,
+                                yAxisID: 'y1',
+                                tension: 0.4,
+                                borderWidth: 2
                             },
                             {
                                 type: 'bar',
                                 label: 'Frequency',
                                 data: frequencies,
-                                backgroundColor: '#0EA5E9',
+                                backgroundColor: backgroundColor,
                                 yAxisID: 'y'
                             }
                         ]
@@ -4757,9 +4792,34 @@
                     options: {
                         maintainAspectRatio: false,
                         responsive: true,
+                        plugins: {
+                            legend: {
+                                display: true
+                            }
+                        },
                         scales: {
-                            y: { beginAtZero: true, type: 'linear', position: 'left' },
-                            y1: { beginAtZero: true, type: 'linear', position: 'right', max: 100 }
+                            y: { 
+                                beginAtZero: true, 
+                                type: 'linear', 
+                                position: 'left',
+                                title: {
+                                    display: true,
+                                    text: 'Frequency'
+                                }
+                            },
+                            y1: { 
+                                beginAtZero: true, 
+                                type: 'linear', 
+                                position: 'right', 
+                                max: 100,
+                                title: {
+                                    display: true,
+                                    text: 'Cumulative %'
+                                },
+                                grid: {
+                                    drawOnChartArea: false
+                                }
+                            }
                         }
                     }
                 };
@@ -5095,7 +5155,24 @@
                     if (fileAnalysisPercentage) fileAnalysisPercentage.textContent = '100%';
                     if (fileAnalysisFill) fileAnalysisFill.style.width = '100%';
 
+                    // Check response status before parsing
+                    if (!response.ok) {
+                        let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+                        try {
+                            const errorData = await response.json();
+                            errorMessage = errorData.error || errorMessage;
+                        } catch (e) {
+                            // Keep default error message
+                        }
+                        throw new Error(errorMessage);
+                    }
+
                     let result = await response.json();
+
+                    // Check if result has error
+                    if (result.error) {
+                        throw new Error(result.error);
+                    }
 
                     // Ensure valid structure
                     if (!result.top_words) result.top_words = [];
@@ -5166,6 +5243,8 @@
                     if (progressInterval) clearInterval(progressInterval);
                     if (timeoutId) clearTimeout(timeoutId);
                     
+                    console.error('File analysis error:', error);
+                    console.error('Error stack:', error.stack);
                     if (fileAnalysisProgress) fileAnalysisProgress.style.display = 'none';
                     UI.showNotification('❌ Analysis failed: ' + (error.message || 'Unknown error'), 'error');
                 } finally {
