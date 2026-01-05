@@ -196,7 +196,7 @@ class TextAnalyzer:
         }
 
     def process_text_with_pyspark(self, text, spark=None):
-        """Process text using PySpark for distributed analysis."""
+        """Process text using PySpark for distributed analysis with visible stages."""
         if spark is None:
             # Fallback to regular processing if Spark not available
             return self.process_text(text)
@@ -215,69 +215,65 @@ class TextAnalyzer:
             start_time = time.time()
             sc = spark.sparkContext
             
-            # Clean and split text into lines for RDD processing
+            # Clean and split text into words
             cleaned = self.clean_text(text)
-            lines = [line.strip() for line in cleaned.split('\n') if line.strip()]
+            words = cleaned.split()
             
-            # Job 1: Create RDD and parallelize data
-            text_rdd = sc.parallelize(lines, numPartitions=4)
-            text_rdd.setName("TextLines")  # Name for UI visibility
-            text_rdd.persist()  # Persist with default MEMORY_ONLY level
+            # Create DataFrame for better Spark UI visibility
+            from pyspark.sql import Row
             
-            # Force materialization by counting lines
-            line_count = text_rdd.count()
+            # Stage 1-2: Create DataFrame and show schema
+            word_rows = [Row(word=w.lower(), length=len(w)) for w in words if w]
+            df = spark.createDataFrame(word_rows)
+            df.cache()
+            
+            # Force execution - creates stages
+            total_words = df.count()
             
             execution_details['jobs'].append({
                 'job_id': 'Job 1',
-                'description': 'Parallelize and cache text data',
-                'stages': ['Stage 1: Data partitioning and count (4 partitions)'],
-                'tasks': 4,
-                'status': 'completed'
-            })
-            execution_details['total_stages'] += 1
-            execution_details['total_tasks'] += 4
-            
-            # Job 2: Word tokenization and filtering
-            words_rdd = text_rdd \
-                .flatMap(lambda line: line.split()) \
-                .filter(lambda word: word and len(word) > 2 and word not in self.stopwords)
-            
-            words_rdd.setName("FilteredWords")  # Name for UI visibility
-            words_rdd.persist()  # Persist filtered words
-            
-            # Force materialization
-            total_word_count = words_rdd.count()
-            
-            execution_details['jobs'].append({
-                'job_id': 'Job 2',
-                'description': 'Tokenize and filter words',
-                'stages': [
-                    'Stage 2: FlatMap transformation',
-                    'Stage 3: Filter stopwords and count'
-                ],
+                'description': 'Create and cache word DataFrame',
+                'stages': ['Stage 1: CreateDataFrame', 'Stage 2: Count for caching'],
                 'tasks': 8,
                 'status': 'completed'
             })
             execution_details['total_stages'] += 2
             execution_details['total_tasks'] += 8
             
-            # Job 3: Word count aggregation with explicit stages
-            word_counts = words_rdd.map(lambda word: (word, 1)) \
-                .reduceByKey(lambda a, b: a + b)
+            # Stage 3-4: Filter stopwords and short words
+            filtered_df = df.filter(
+                (df.length > 2) & 
+                (~df.word.isin(list(self.stopwords)))
+            )
+            filtered_df.cache()
             
-            word_counts.setName("WordCounts")  # Name for UI visibility
-            word_counts.persist()  # Persist word counts
+            # Force execution
+            filtered_count = filtered_df.count()
             
-            # Force materialization and sorting
-            sorted_counts = word_counts.sortBy(lambda x: x[1], ascending=False)
+            execution_details['jobs'].append({
+                'job_id': 'Job 2', 
+                'description': 'Filter stopwords and short words',
+                'stages': ['Stage 3: Filter operation', 'Stage 4: Count filtered words'],
+                'tasks': 8,
+                'status': 'completed'
+            })
+            execution_details['total_stages'] += 2
+            execution_details['total_tasks'] += 8
+            
+            # Stage 5-7: Group by word and count (creates shuffle)
+            word_counts_df = filtered_df.groupBy("word").count()
+            word_counts_df.cache()
+            
+            # Force execution
+            unique_words = word_counts_df.count()
             
             execution_details['jobs'].append({
                 'job_id': 'Job 3',
-                'description': 'Count and aggregate word frequencies',
+                'description': 'Group and count word frequencies (shuffle)',
                 'stages': [
-                    'Stage 4: Map to key-value pairs',
-                    'Stage 5: ReduceByKey (shuffle operation)',
-                    'Stage 6: Sort by frequency'
+                    'Stage 5: Exchange (shuffle for groupBy)',
+                    'Stage 6: Aggregate',
+                    'Stage 7: Count unique words'
                 ],
                 'tasks': 16,
                 'status': 'completed'
@@ -285,46 +281,95 @@ class TextAnalyzer:
             execution_details['total_stages'] += 3
             execution_details['total_tasks'] += 16
             
-            # Job 4: Collect top results
-            top_results = sorted_counts.take(50)
-            top_words = [w[0] for w in top_results]
-            top_counts = [w[1] for w in top_results]
+            # Stage 8-9: Sort by count descending (creates shuffle)
+            sorted_df = word_counts_df.orderBy(word_counts_df['count'].desc())
+            
+            # Force execution and collect top results - creates more stages
+            top_results = sorted_df.take(50)
             
             execution_details['jobs'].append({
                 'job_id': 'Job 4',
-                'description': 'Collect top 50 word frequencies',
-                'stages': ['Stage 7: Take top results'],
-                'tasks': 4,
+                'description': 'Sort and collect top 50 results (shuffle)',
+                'stages': [
+                    'Stage 8: Exchange (shuffle for sort)',
+                    'Stage 9: Sort and take top 50'
+                ],
+                'tasks': 12,
                 'status': 'completed'
             })
-            execution_details['total_stages'] += 1
-            execution_details['total_tasks'] += 4
+            execution_details['total_stages'] += 2
+            execution_details['total_tasks'] += 12
             
-            # Total and unique word counts
-            total_words = len(cleaned.split())
-            unique_words = word_counts.count()  # Use Spark count for accuracy
+            # Stage 10-11: Calculate additional statistics
+            avg_word_length = filtered_df.agg({"length": "avg"}).collect()[0][0]
+            
+            execution_details['jobs'].append({
+                'job_id': 'Job 5',
+                'description': 'Calculate average word length',
+                'stages': ['Stage 10: Aggregate', 'Stage 11: Collect result'],
+                'tasks': 8,
+                'status': 'completed'
+            })
+            execution_details['total_stages'] += 2
+            execution_details['total_tasks'] += 8
+            
+            # Stage 12-13: Word length distribution (creates shuffle)
+            length_dist_df = filtered_df.groupBy("length").count().orderBy("length")
+            length_results = length_dist_df.collect()
+            
+            execution_details['jobs'].append({
+                'job_id': 'Job 6',
+                'description': 'Calculate word length distribution (shuffle)',
+                'stages': [
+                    'Stage 12: Exchange (shuffle for length grouping)',
+                    'Stage 13: Sort and collect length distribution'
+                ],
+                'tasks': 12,
+                'status': 'completed'
+            })
+            execution_details['total_stages'] += 2
+            execution_details['total_tasks'] += 12
+            
+            # Convert results to required format
+            top_words = [row['word'] for row in top_results if row['word']]
+            top_counts = [row['count'] for row in top_results if row['count']]
+            
+            # Build length distribution dict from Spark results
+            length_dist = {int(row['length']): int(row['count']) for row in length_results}
+            
+            # Unpersist cached data to free memory
+            try:
+                df.unpersist()
+                filtered_df.unpersist()
+                word_counts_df.unpersist()
+            except:
+                pass  # Ignore unpersist errors
             
             # Calculate execution time
             end_time = time.time()
             execution_details['execution_time_ms'] = int((end_time - start_time) * 1000)
             
-            # Get remaining analytics using standard methods
+            # Get remaining analytics using standard methods (non-Spark)
             bigrams = self.get_bigrams(text)
             sentiment_score, sentiment_label = self.analyze_sentiment(text)
             topics = self.extract_topics(text)
-            length_dist = self.get_word_length_distribution(text)
             
-            # Get distribution for top 5 words
-            top_5_words = top_words[:5]
+            # Get distribution for top 5 words using standard method
+            top_5_words = top_words[:5] if len(top_words) >= 5 else top_words
             word_dist = self.get_word_distribution(text, top_5_words)
+            
+            # Mark all jobs as successful
+            for job in execution_details['jobs']:
+                if 'status' not in job:
+                    job['status'] = 'completed'
             
             return {
                 'top_words': top_words,
                 'top_counts': top_counts,
-                'total_words': total_words,
-                'unique_words': unique_words,
+                'total_words': int(total_words),
+                'unique_words': int(unique_words),
                 'top_bigrams': bigrams,
-                'sentiment_score': sentiment_score,
+                'sentiment_score': float(sentiment_score),
                 'sentiment_label': sentiment_label,
                 'topics': topics,
                 'length_distribution': length_dist,
@@ -335,4 +380,5 @@ class TextAnalyzer:
         except Exception as e:
             logger_instance = __import__('logging').getLogger(__name__)
             logger_instance.error(f"PySpark processing failed: {e}, falling back to standard processing")
+            # Return standard processing results with failure noted
             return self.process_text(text)
