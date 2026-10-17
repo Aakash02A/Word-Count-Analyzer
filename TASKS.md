@@ -8,7 +8,7 @@
 | **Phase 1** | Foundation (FastAPI + React Vite + Health + Tests) | **Completed** | Tests passing (3/3), frontend builds, health 200 OK |
 | **Phase 2** | Core Analytics (Tokenization, Frequency, Statistics) | **Completed** | Tests passing (17/17), deterministic stats, live UI |
 | **Phase 3** | PySpark Integration & Benchmarks | **Completed** | Tests passing (20/20), DataFrame pipeline & benchmarks |
-| **Phase 4** | Document Ingestion (TXT, PDF, DOCX) & NLP | *Pending Approval* | Scheduled after Phase 3 |
+| **Phase 4** | Document Ingestion (TXT, PDF, DOCX) & NLP | **Completed** | Tests passing (37/37), Multi-source ingestion & NLP |
 | **Phase 5** | Interactive React Dashboard & CSV Export | *Pending Approval* | Scheduled after Phase 4 |
 | **Phase 6** | MySQL Database & History Persistence | *Pending Approval* | Scheduled after Phase 5 |
 | **Phase 7** | Security Hardening & Quality Review | *Pending Approval* | Scheduled after Phase 6 |
@@ -58,3 +58,22 @@
 - [x] Modularize frontend UI with component modules (`AnalysisWorkspace`, `MetricsCards`, `FrequencyTable`, `LengthDistribution`, `BigramPills`, `SystemDiagnostics`).
 - [x] Add Engine selection (`Python In-Memory` vs `Apache PySpark`) to UI and display execution latency and engine metadata.
 - [x] Verify full pytest suite (20/20 passed) and production frontend build.
+
+---
+
+## Phase 4 Checklist (Completed)
+
+- [x] Implement `DocumentService` extracting text from plain text `.txt`, PDF `.pdf` (`pypdf`), and Word `.docx` (`python-docx`).
+- [x] Implement document validation (file size limit, format checks, empty document and scanned PDF detection).
+- [x] Implement `URLService` with strict SSRF protection:
+  - Disallows loopback, private RFC 1918, link-local, multicast, and reserved IPv4/IPv6 addresses.
+  - DNS resolution validation before connection.
+  - Re-validates destinations after redirect hops (max 5 redirects).
+  - Timeout enforcement and response byte limits (5 MB).
+  - Clean HTML parsing and text extraction using BeautifulSoup.
+- [x] Implement `NLPService` utilizing TextBlob for polarity (-1.0 to 1.0), subjectivity (0.0 to 1.0), and sentiment classification (`positive`, `neutral`, `negative`).
+- [x] Implement noun phrase discovery and deduplication.
+- [x] Add multipart endpoint `POST /api/v1/analysis/file` and URL endpoint `POST /api/v1/analysis/url`.
+- [x] Add automated test suites: `test_documents.py`, `test_urls.py`, and `test_nlp.py` (37 tests passing).
+- [x] Build frontend multi-source tabbed ingestion (Raw Text, Document Upload, Webpage URL) and NLP visualization components (`SentimentCard`, `NounPhrasesPills`).
+- [x] Verify production frontend build (`npm run build`).

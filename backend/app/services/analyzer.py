@@ -6,9 +6,11 @@ from app.schemas.analysis import (
     AnalysisMetadata,
     AnalysisResponse,
     BigramItem,
+    SentimentResult,
     WordFrequencyItem,
     WordLengthItem,
 )
+from app.services.nlp_service import nlp_service
 from app.services.preprocessor import TextPreprocessor
 from app.services.spark_service import spark_service
 
@@ -16,7 +18,7 @@ from app.services.spark_service import spark_service
 class TextAnalyzer:
     """
     Core analytics service computing token statistics, frequency tables,
-    word length distributions, and bigram patterns.
+    word length distributions, bigram patterns, and NLP sentiment / noun phrases.
     Supports both Python standard execution and Apache PySpark DataFrame pipeline.
     """
 
@@ -27,9 +29,11 @@ class TextAnalyzer:
         top_n: int = 10,
         case_sensitive: bool = False,
         engine: str = "python",
+        source_type: str = "text",
+        source_name: Optional[str] = None,
     ) -> AnalysisResponse:
         """
-        Runs text analytics on input text.
+        Runs text analytics and NLP insights on input text.
         Produces deterministic, reproducible outputs using either standard Python or PySpark.
         """
         start_time = time.perf_counter()
@@ -41,6 +45,10 @@ class TextAnalyzer:
         tokens = TextPreprocessor.tokenize(text, case_sensitive=case_sensitive)
         total_tokens = len(tokens)
 
+        # NLP Sentiment & Noun Phrases
+        sentiment = nlp_service.analyze_sentiment(text)
+        noun_phrases = nlp_service.extract_noun_phrases(text, max_phrases=top_n)
+
         if total_tokens == 0:
             exec_time_ms = round((time.perf_counter() - start_time) * 1000.0, 2)
             return AnalysisResponse(
@@ -51,12 +59,16 @@ class TextAnalyzer:
                 word_frequencies=[],
                 word_length_distribution=[],
                 bigrams=[],
+                sentiment=sentiment,
+                noun_phrases=noun_phrases,
                 metadata=AnalysisMetadata(
                     raw_character_count=raw_char_count,
                     normalized_character_count=norm_char_count,
                     case_sensitive=case_sensitive,
                     top_n_requested=top_n,
                     engine_used=engine,
+                    source_type=source_type,
+                    source_name=source_name,
                     execution_time_ms=exec_time_ms,
                     spark_version=None,
                 ),
@@ -94,25 +106,27 @@ class TextAnalyzer:
                         word_frequencies=word_frequencies,
                         word_length_distribution=word_length_distribution,
                         bigrams=bigram_items,
+                        sentiment=sentiment,
+                        noun_phrases=noun_phrases,
                         metadata=AnalysisMetadata(
                             raw_character_count=raw_char_count,
                             normalized_character_count=norm_char_count,
                             case_sensitive=case_sensitive,
                             top_n_requested=top_n,
                             engine_used=actual_engine,
+                            source_type=source_type,
+                            source_name=source_name,
                             execution_time_ms=exec_time_ms,
                             spark_version=spark_ver,
                         ),
                     )
             except Exception:
-                # Fall back to standard Python engine if Spark fails
                 actual_engine = "python"
 
-        # Standard Python Processing Path (default & deterministic baseline)
+        # Standard Python Processing Path (deterministic baseline)
         counts = Counter(tokens)
         unique_tokens = len(counts)
 
-        # Deterministic sorting: count descending, then alphabetical word ascending
         sorted_word_counts = sorted(
             counts.items(),
             key=lambda item: (-item[1], item[0]),
@@ -147,7 +161,6 @@ class TextAnalyzer:
         ]
         bigram_counts = Counter(bigrams)
 
-        # Deterministic sorting: count descending, then alphabetical ascending
         sorted_bigrams = sorted(
             bigram_counts.items(),
             key=lambda item: (-item[1], item[0]),
@@ -167,12 +180,16 @@ class TextAnalyzer:
             word_frequencies=word_frequencies,
             word_length_distribution=word_length_distribution,
             bigrams=bigram_items,
+            sentiment=sentiment,
+            noun_phrases=noun_phrases,
             metadata=AnalysisMetadata(
                 raw_character_count=raw_char_count,
                 normalized_character_count=norm_char_count,
                 case_sensitive=case_sensitive,
                 top_n_requested=top_n,
                 engine_used=actual_engine,
+                source_type=source_type,
+                source_name=source_name,
                 execution_time_ms=exec_time_ms,
                 spark_version=spark_ver,
             ),

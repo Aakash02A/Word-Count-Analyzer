@@ -4,15 +4,19 @@ from app.schemas.analysis import (
     AnalysisRequest,
     AnalysisResponse,
     BigramItem,
+    SentimentResult,
+    UrlAnalysisRequest,
     WordFrequencyItem,
     WordLengthItem,
 )
 
 __all__ = [
     "AnalysisRequest",
+    "UrlAnalysisRequest",
     "AnalysisResponse",
     "WordFrequencyItem",
     "WordLengthItem",
     "BigramItem",
+    "SentimentResult",
     "AnalysisMetadata",
 ]

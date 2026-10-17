@@ -84,7 +84,100 @@ export async function analyzeText({ text, top_n = 10, case_sensitive = false, en
   }
 }
 
+/**
+ * Uploads a document (TXT, PDF, DOCX) for extraction and analysis
+ * @param {object} params
+ * @param {File} params.file
+ * @param {number} [params.top_n=10]
+ * @param {boolean} [params.case_sensitive=false]
+ * @param {string} [params.engine='python']
+ * @returns {Promise<{success: boolean, data?: object, error?: string}>}
+ */
+export async function analyzeFile({ file, top_n = 10, case_sensitive = false, engine = 'python' }) {
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('top_n', String(top_n));
+    formData.append('case_sensitive', String(case_sensitive));
+    formData.append('engine', String(engine));
+
+    const response = await fetch(`${API_BASE_URL}/api/v1/analysis/file`, {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null);
+      const detail = errorData?.detail || `Error ${response.status}: ${response.statusText}`;
+      return {
+        success: false,
+        error: detail,
+      };
+    }
+
+    const data = await response.json();
+    return {
+      success: true,
+      data,
+    };
+  } catch (err) {
+    return {
+      success: false,
+      error: err.message || 'Failed to upload document to backend',
+    };
+  }
+}
+
+/**
+ * Submits a public webpage URL for SSRF-safe fetching and analysis
+ * @param {object} params
+ * @param {string} params.url
+ * @param {number} [params.top_n=10]
+ * @param {boolean} [params.case_sensitive=false]
+ * @param {string} [params.engine='python']
+ * @returns {Promise<{success: boolean, data?: object, error?: string}>}
+ */
+export async function analyzeUrl({ url, top_n = 10, case_sensitive = false, engine = 'python' }) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/v1/analysis/url`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify({
+        url,
+        top_n: Number(top_n),
+        case_sensitive: Boolean(case_sensitive),
+        engine: String(engine),
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null);
+      const detail = errorData?.detail || `Error ${response.status}: ${response.statusText}`;
+      return {
+        success: false,
+        error: detail,
+      };
+    }
+
+    const data = await response.json();
+    return {
+      success: true,
+      data,
+    };
+  } catch (err) {
+    return {
+      success: false,
+      error: err.message || 'Failed to analyze webpage URL',
+    };
+  }
+}
+
 export default {
   checkHealth,
   analyzeText,
+  analyzeFile,
+  analyzeUrl,
 };
