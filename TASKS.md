@@ -11,7 +11,7 @@
 | **Phase 4** | Document Ingestion (TXT, PDF, DOCX) & NLP | **Completed** | Tests passing (37/37), Multi-source ingestion & NLP |
 | **Phase 5** | Interactive React Dashboard & CSV Export | **Completed** | Tests passing (40/40), Chart.js visualizations, CSV export |
 | **Phase 5.5** | UI Navigation & Layout Refactoring | **Completed** | React Router v7, 7 modular views, sidebar/mobile layout, 40/40 tests |
-| **Phase 6** | MySQL Database & History Persistence | *Pending Approval* | Scheduled after Phase 5.5 |
+| **Phase 6** | MySQL Database & History Persistence | **Completed** | Tests passing (44/44), Alembic migrations, full UI replay |
 | **Phase 7** | Security Hardening & Quality Review | *Pending Approval* | Scheduled after Phase 6 |
 | **Phase 8** | Production Deployment & Public HTTPS Access | *Pending Approval* | Scheduled after Phase 7 |
 
@@ -120,3 +120,29 @@
 - [x] Update CSS design system in `src/styles/index.css` for sidebar, navigation states, responsive breakpoints, and cards.
 - [x] Resolve Starlette HTTP status deprecations in `backend/app/api/routes/analysis.py`.
 - [x] Verify complete backend test suite (40/40 passed in 25.6s) and frontend production build (`vite build` exit code 0).
+
+---
+
+## Phase 6 Checklist (Completed)
+
+- [x] Configure MySQL database connection parameters and dynamic `database_url` in `backend/app/core/config.py`.
+- [x] Establish isolated SQLAlchemy session management in `backend/app/db/session.py` with `pool_pre_ping=True`.
+- [x] Create `AnalysisHistory` ORM model in `backend/app/models/history.py` storing:
+  - Run metadata: source type (`text`, `file`, `url`), source name, execution engine, timestamp.
+  - Indexed scalar metrics: total words, unique words, average word length, sentiment classification and polarity scores.
+  - Serialized `result_json` payload for full interactive UI replay.
+- [x] Initialize Alembic and generate baseline migration `51a2f34537bd_create_analysis_history_table.py`.
+- [x] Execute `alembic upgrade head` applying version-controlled schema to local MySQL 8.4 database `word_intelligence`.
+- [x] Implement `HistoryService` in `backend/app/services/history_service.py` with CRUD, filtering, pagination, and aggregation.
+- [x] Expose REST endpoints:
+  - `GET /api/v1/history`: Paginated history list with source type, engine, and search filters.
+  - `GET /api/v1/history/stats`: Total runs, total words analyzed, and latest execution timestamp.
+  - `GET /api/v1/history/{history_id}`: Full run detail with structured analytics payload.
+  - `DELETE /api/v1/history/{history_id}`: Historical record deletion.
+  - `GET /api/v1/readiness`: Health readiness probe assessing database and Spark status without failing basic liveness.
+- [x] Integrate automatic history persistence into `POST /api/v1/analysis`, `POST /api/v1/analysis/file`, and `POST /api/v1/analysis/url`.
+- [x] Build automated test suite in `backend/tests/test_history.py` (4 tests passing).
+- [x] Update frontend API client (`frontend/src/services/api.js`) with `fetchHistory`, `fetchHistoryStats`, `fetchHistoryDetail`, `deleteHistoryRecord`, and `checkReadiness`.
+- [x] Build rich interactive `HistoryPage.jsx` with search, source/engine filtering, stats cards, and 1-click full analysis replay and CSV export.
+- [x] Enhance `SettingsPage.jsx` with live MySQL ping latency and database readiness diagnostics.
+- [x] Verify full backend test suite (**44/44 passed** in 26.09s) and production frontend build (`npm run build` exit code 0).

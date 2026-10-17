@@ -1,5 +1,5 @@
 import json
-from typing import List, Union
+from typing import List, Optional, Union
 from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -47,6 +47,36 @@ class Settings(BaseSettings):
     SPARK_UI_ENABLED: bool = False
     SPARK_DRIVER_MEMORY: str = "1g"
     ENABLE_SPARK_ANALYTICS: bool = True
+
+    # MySQL Database configuration (Phase 6)
+    MYSQL_SERVER: str = "localhost"
+    MYSQL_PORT: int = 3306
+    MYSQL_USER: str = "root"
+    MYSQL_PASSWORD: str = ""
+    MYSQL_DB: str = "word_intelligence"
+    SQLALCHEMY_DATABASE_URI: Optional[str] = None
+    DATABASE_POOL_SIZE: int = 5
+    DATABASE_MAX_OVERFLOW: int = 10
+    DATABASE_POOL_PRE_PING: bool = True
+    ENABLE_DATABASE_HISTORY: bool = True
+
+    @property
+    def database_url(self) -> str:
+        if self.SQLALCHEMY_DATABASE_URI:
+            uri = self.SQLALCHEMY_DATABASE_URI
+            if "${" in uri:
+                uri = (
+                    uri.replace("${MYSQL_USER}", self.MYSQL_USER)
+                    .replace("${MYSQL_PASSWORD}", self.MYSQL_PASSWORD)
+                    .replace("${MYSQL_SERVER}", self.MYSQL_SERVER)
+                    .replace("${MYSQL_PORT}", str(self.MYSQL_PORT))
+                    .replace("${MYSQL_DB}", self.MYSQL_DB)
+                )
+            if "charset=" not in uri:
+                sep = "&" if "?" in uri else "?"
+                uri = f"{uri}{sep}charset=utf8mb4"
+            return uri
+        return f"mysql+pymysql://{self.MYSQL_USER}:{self.MYSQL_PASSWORD}@{self.MYSQL_SERVER}:{self.MYSQL_PORT}/{self.MYSQL_DB}?charset=utf8mb4"
 
 
 settings = Settings()

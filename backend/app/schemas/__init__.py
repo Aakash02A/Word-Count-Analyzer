@@ -9,6 +9,12 @@ from app.schemas.analysis import (
     WordFrequencyItem,
     WordLengthItem,
 )
+from app.schemas.history import (
+    HistoryDetailResponse,
+    HistoryListResponse,
+    HistoryStatsResponse,
+    HistorySummaryItem,
+)
 
 __all__ = [
     "AnalysisRequest",
@@ -19,4 +25,8 @@ __all__ = [
     "BigramItem",
     "SentimentResult",
     "AnalysisMetadata",
+    "HistorySummaryItem",
+    "HistoryListResponse",
+    "HistoryDetailResponse",
+    "HistoryStatsResponse",
 ]

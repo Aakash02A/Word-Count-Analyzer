@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { Settings, Server, Cpu, Database, RefreshCw, CheckCircle2, XCircle, Clock } from 'lucide-react';
 import PageHeader from '../components/layout/PageHeader';
 import SystemDiagnostics from '../components/SystemDiagnostics';
+import { checkReadiness } from '../services/api';
 
 export default function SettingsPage() {
   const context = useOutletContext() || {};
@@ -15,6 +16,30 @@ export default function SettingsPage() {
   };
   const refreshHealth = context.refreshHealth;
 
+  const [readiness, setReadiness] = useState(null);
+  const [isCheckingReadiness, setIsCheckingReadiness] = useState(false);
+
+  const fetchReadiness = async () => {
+    setIsCheckingReadiness(true);
+    const res = await checkReadiness();
+    setIsCheckingReadiness(false);
+    if (res.success) {
+      setReadiness(res.data);
+    }
+  };
+
+  useEffect(() => {
+    fetchReadiness();
+  }, []);
+
+  const handleFullRefresh = () => {
+    if (refreshHealth) refreshHealth();
+    fetchReadiness();
+  };
+
+  const isDbConnected = readiness?.database?.connected;
+  const dbLatency = readiness?.database?.latency_ms;
+
   return (
     <div className="page-content">
       <PageHeader
@@ -22,20 +47,18 @@ export default function SettingsPage() {
         title="Settings & System Diagnostics"
         description="Inspect backend connectivity, engine configurations, diagnostic metadata, and operational status."
       >
-        {refreshHealth && (
-          <button
-            onClick={refreshHealth}
-            className="btn-secondary"
-            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}
-          >
-            <RefreshCw size={14} />
-            <span>Check Connectivity</span>
-          </button>
-        )}
+        <button
+          onClick={handleFullRefresh}
+          className="btn-secondary"
+          style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}
+        >
+          <RefreshCw size={14} className={isCheckingReadiness ? 'spin' : ''} />
+          <span>Check Connectivity</span>
+        </button>
       </PageHeader>
 
       {/* Diagnostics Panel */}
-      <SystemDiagnostics healthState={healthState} activePhase="Phase 5.5: UI Navigation" />
+      <SystemDiagnostics healthState={healthState} activePhase="Phase 6: MySQL Database & History" />
 
       {/* Engine & Architecture Cards */}
       <div
@@ -125,7 +148,7 @@ export default function SettingsPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', fontSize: '0.8125rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-dim)' }}>
               <span>Execution Mode:</span>
-              <span style={{ color: 'var(--text-main)', fontWeight: 500 }}>local[*] / Cluster</span>
+              <span style={{ color: 'var(--text-main)', fontWeight: 500 }}>local[2] / Spark 4.2</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-dim)' }}>
               <span>Fallback Strategy:</span>
@@ -160,20 +183,38 @@ export default function SettingsPage() {
             </div>
             <div>
               <h4 style={{ margin: 0, fontSize: '0.95rem', color: 'var(--text-main)' }}>MySQL Relational Storage</h4>
-              <span style={{ fontSize: '0.75rem', color: 'var(--accent-amber)', fontWeight: 600 }}>Phase 6 Target</span>
+              <span
+                style={{
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
+                  color: isDbConnected ? 'var(--accent-emerald)' : 'var(--accent-rose)',
+                }}
+              >
+                {isDbConnected ? 'Connected (Online)' : 'Connecting / Offline'}
+              </span>
             </div>
           </div>
           <p style={{ margin: '0 0 1rem 0', fontSize: '0.8125rem', color: 'var(--text-muted)', lineHeight: '1.5' }}>
-            Relational storage for archiving analysis runs, execution metadata, word distributions, and sentiment metrics with SQLAlchemy ORM and Alembic migrations.
+            Relational storage archiving analysis runs, word metrics, and sentiment scores via SQLAlchemy ORM and Alembic migrations.
           </p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', fontSize: '0.8125rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-dim)' }}>
-              <span>Schema Version:</span>
-              <span style={{ color: 'var(--text-main)', fontWeight: 500 }}>v0.4 (Pending Migration)</span>
+              <span>Database Name:</span>
+              <span style={{ color: 'var(--text-main)', fontWeight: 500 }}>
+                {readiness?.database?.database || 'word_intelligence'}
+              </span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-dim)' }}>
-              <span>Status:</span>
-              <span style={{ color: 'var(--text-main)', fontWeight: 500 }}>Ready for Phase 6</span>
+              <span>Latency:</span>
+              <span style={{ color: 'var(--text-main)', fontWeight: 500 }}>
+                {dbLatency !== undefined && dbLatency !== null ? `${dbLatency} ms` : 'N/A'}
+              </span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-dim)' }}>
+              <span>Schema Migrations:</span>
+              <span style={{ color: 'var(--accent-emerald)', fontWeight: 500 }}>
+                Alembic Head (Up to Date)
+              </span>
             </div>
           </div>
         </div>

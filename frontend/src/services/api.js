@@ -39,11 +39,45 @@ export async function checkHealth() {
 }
 
 /**
+ * Evaluates readiness across backend dependencies including MySQL and Spark
+ * @returns {Promise<{success: boolean, data?: object, error?: string}>}
+ */
+export async function checkReadiness() {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/v1/readiness`, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      return {
+        success: false,
+        error: `Readiness check failed with status ${response.status}`,
+      };
+    }
+
+    const data = await response.json();
+    return {
+      success: true,
+      data,
+    };
+  } catch (err) {
+    return {
+      success: false,
+      error: err.message || 'Failed to query readiness endpoint',
+    };
+  }
+}
+
+/**
  * Submits raw text for core linguistic and frequency analytics
  * @param {object} params
  * @param {string} params.text
  * @param {number} [params.top_n=10]
  * @param {boolean} [params.case_sensitive=false]
+ * @param {string} [params.engine='python']
  * @returns {Promise<{success: boolean, data?: object, error?: string}>}
  */
 export async function analyzeText({ text, top_n = 10, case_sensitive = false, engine = 'python' }) {
@@ -176,6 +210,156 @@ export async function analyzeUrl({ url, top_n = 10, case_sensitive = false, engi
 }
 
 /**
+ * Fetches paginated history records with optional filters
+ * @param {object} [params]
+ * @param {number} [params.skip=0]
+ * @param {number} [params.limit=20]
+ * @param {string} [params.source_type]
+ * @param {string} [params.engine]
+ * @param {string} [params.search]
+ * @returns {Promise<{success: boolean, data?: object, error?: string}>}
+ */
+export async function fetchHistory(params = {}) {
+  try {
+    const query = new URLSearchParams();
+    if (params.skip !== undefined) query.set('skip', String(params.skip));
+    if (params.limit !== undefined) query.set('limit', String(params.limit));
+    if (params.source_type && params.source_type !== 'all') query.set('source_type', params.source_type);
+    if (params.engine && params.engine !== 'all') query.set('engine', params.engine);
+    if (params.search && params.search.trim()) query.set('search', params.search.trim());
+
+    const qs = query.toString();
+    const url = `${API_BASE_URL}/api/v1/history${qs ? `?${qs}` : ''}`;
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null);
+      return {
+        success: false,
+        error: errorData?.detail || `Failed to fetch history (status ${response.status})`,
+      };
+    }
+
+    const data = await response.json();
+    return {
+      success: true,
+      data,
+    };
+  } catch (err) {
+    return {
+      success: false,
+      error: err.message || 'Failed to fetch history records from database',
+    };
+  }
+}
+
+/**
+ * Fetches high-level historical statistics (total runs, total words, last run)
+ * @returns {Promise<{success: boolean, data?: object, error?: string}>}
+ */
+export async function fetchHistoryStats() {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/v1/history/stats`, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      return {
+        success: false,
+        error: `Failed to fetch history statistics (status ${response.status})`,
+      };
+    }
+
+    const data = await response.json();
+    return {
+      success: true,
+      data,
+    };
+  } catch (err) {
+    return {
+      success: false,
+      error: err.message || 'Failed to retrieve history statistics',
+    };
+  }
+}
+
+/**
+ * Fetches complete historical analysis detail including reconstructed results payload
+ * @param {number|string} id
+ * @returns {Promise<{success: boolean, data?: object, error?: string}>}
+ */
+export async function fetchHistoryDetail(id) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/v1/history/${id}`, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null);
+      return {
+        success: false,
+        error: errorData?.detail || `History record #${id} not found`,
+      };
+    }
+
+    const data = await response.json();
+    return {
+      success: true,
+      data,
+    };
+  } catch (err) {
+    return {
+      success: false,
+      error: err.message || 'Failed to retrieve history record detail',
+    };
+  }
+}
+
+/**
+ * Deletes a historical record by ID
+ * @param {number|string} id
+ * @returns {Promise<{success: boolean, error?: string}>}
+ */
+export async function deleteHistoryRecord(id) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/v1/history/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Accept': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null);
+      return {
+        success: false,
+        error: errorData?.detail || `Failed to delete record #${id}`,
+      };
+    }
+
+    return {
+      success: true,
+    };
+  } catch (err) {
+    return {
+      success: false,
+      error: err.message || 'Failed to delete history record',
+    };
+  }
+}
+
+/**
  * Exports current analysis data as an RFC 4180 compliant CSV document
  * and initiates a browser file download.
  * @param {object} analysisData Complete AnalysisResponse object
@@ -224,8 +408,13 @@ export async function exportAnalysisCsv(analysisData) {
 
 export default {
   checkHealth,
+  checkReadiness,
   analyzeText,
   analyzeFile,
   analyzeUrl,
+  fetchHistory,
+  fetchHistoryStats,
+  fetchHistoryDetail,
+  deleteHistoryRecord,
   exportAnalysisCsv,
 };

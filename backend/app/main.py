@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routes import analysis, export, health
+from app.api.routes import analysis, export, health, history, readiness
 from app.core.config import settings
 from app.services.spark_service import spark_service
 
@@ -42,8 +42,10 @@ def create_application() -> FastAPI:
 
     # Versioned API prefix endpoints
     app.include_router(health.router, prefix=settings.API_V1_STR, tags=["Health"])
+    app.include_router(readiness.router, prefix=settings.API_V1_STR, tags=["Health"])
     app.include_router(analysis.router, prefix=settings.API_V1_STR, tags=["Analysis"])
     app.include_router(export.router, prefix=settings.API_V1_STR, tags=["Export"])
+    app.include_router(history.router, prefix=settings.API_V1_STR, tags=["History"])
 
     @app.get("/", include_in_schema=False)
     def root():
@@ -52,6 +54,7 @@ def create_application() -> FastAPI:
             "version": settings.VERSION,
             "docs": f"{settings.API_V1_STR}/docs",
             "health": "/health",
+            "readiness": f"{settings.API_V1_STR}/readiness",
         }
 
     return app
