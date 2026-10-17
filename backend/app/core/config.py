@@ -41,5 +41,12 @@ class Settings(BaseSettings):
     MAX_TEXT_LENGTH_CHARS: int = 500000
     HTTP_REQUEST_TIMEOUT_SECONDS: int = 10
 
+    # Apache PySpark configuration
+    SPARK_MASTER: str = "local[2]"
+    SPARK_APP_NAME: str = "WordIntelligence"
+    SPARK_UI_ENABLED: bool = False
+    SPARK_DRIVER_MEMORY: str = "1g"
+    ENABLE_SPARK_ANALYTICS: bool = True
+
 
 settings = Settings()

@@ -37,6 +37,7 @@ def analyze_text(request: AnalysisRequest) -> AnalysisResponse:
         text=raw_text,
         top_n=request.top_n,
         case_sensitive=request.case_sensitive,
+        engine=request.engine,
     )
 
     return response

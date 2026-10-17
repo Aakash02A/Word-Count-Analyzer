@@ -1,8 +1,19 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes import analysis, health
 from app.core.config import settings
+from app.services.spark_service import spark_service
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Application lifespan managing external services including PySpark."""
+    yield
+    # Graceful shutdown of PySpark session
+    spark_service.stop_session()
 
 
 def create_application() -> FastAPI:
@@ -13,6 +24,7 @@ def create_application() -> FastAPI:
         openapi_url=f"{settings.API_V1_STR}/openapi.json",
         docs_url=f"{settings.API_V1_STR}/docs",
         redoc_url=f"{settings.API_V1_STR}/redoc",
+        lifespan=lifespan,
     )
 
     # Configure CORS

@@ -24,6 +24,10 @@ class AnalysisRequest(BaseModel):
         default=False,
         description="Whether punctuation characters should be kept inside tokens.",
     )
+    engine: str = Field(
+        default="python",
+        description="Processing engine: 'python' (standard) or 'pyspark' (Apache Spark DataFrame pipeline).",
+    )
 
 
 class WordFrequencyItem(BaseModel):
@@ -54,6 +58,9 @@ class AnalysisMetadata(BaseModel):
     normalized_character_count: int
     case_sensitive: bool
     top_n_requested: int
+    engine_used: str = "python"
+    execution_time_ms: Optional[float] = None
+    spark_version: Optional[str] = None
 
 
 class AnalysisResponse(BaseModel):

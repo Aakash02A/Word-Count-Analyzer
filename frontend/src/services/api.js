@@ -46,7 +46,7 @@ export async function checkHealth() {
  * @param {boolean} [params.case_sensitive=false]
  * @returns {Promise<{success: boolean, data?: object, error?: string}>}
  */
-export async function analyzeText({ text, top_n = 10, case_sensitive = false }) {
+export async function analyzeText({ text, top_n = 10, case_sensitive = false, engine = 'python' }) {
   try {
     const response = await fetch(`${API_BASE_URL}/api/v1/analysis`, {
       method: 'POST',
@@ -58,6 +58,7 @@ export async function analyzeText({ text, top_n = 10, case_sensitive = false }) 
         text,
         top_n: Number(top_n),
         case_sensitive: Boolean(case_sensitive),
+        engine: String(engine),
       }),
     });
 
