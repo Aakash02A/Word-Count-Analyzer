@@ -10,7 +10,8 @@
 | **Phase 3** | PySpark Integration & Benchmarks | **Completed** | Tests passing (20/20), DataFrame pipeline & benchmarks |
 | **Phase 4** | Document Ingestion (TXT, PDF, DOCX) & NLP | **Completed** | Tests passing (37/37), Multi-source ingestion & NLP |
 | **Phase 5** | Interactive React Dashboard & CSV Export | **Completed** | Tests passing (40/40), Chart.js visualizations, CSV export |
-| **Phase 6** | MySQL Database & History Persistence | *Pending Approval* | Scheduled after Phase 5 |
+| **Phase 5.5** | UI Navigation & Layout Refactoring | **Completed** | React Router v7, 7 modular views, sidebar/mobile layout, 40/40 tests |
+| **Phase 6** | MySQL Database & History Persistence | *Pending Approval* | Scheduled after Phase 5.5 |
 | **Phase 7** | Security Hardening & Quality Review | *Pending Approval* | Scheduled after Phase 6 |
 | **Phase 8** | Production Deployment & Public HTTPS Access | *Pending Approval* | Scheduled after Phase 7 |
 
@@ -93,3 +94,29 @@
 - [x] Add CSS styles for toolbar, search input, sort select, view toggles, and export button.
 - [x] Create `backend/tests/test_export.py` with formula sanitization, CSV generation, and endpoint integration tests.
 - [x] Verify full pytest suite (40/40 passed) and production frontend build.
+
+---
+
+## Phase 5.5 Checklist (Completed)
+
+- [x] Install `react-router-dom` and establish route hierarchy.
+- [x] Extract persistent layout components into `src/components/layout/`:
+  - `AppLayout.jsx`: Root application layout with sidebar, mobile nav, scrollable content, and footer.
+  - `Sidebar.jsx`: Desktop sidebar navigation with active route highlights, brand identity, and live backend health indicator.
+  - `MobileNav.jsx`: Responsive drawer/hamburger navigation for smaller screens.
+  - `PageHeader.jsx`: Standardized page header component with title, icon, and optional action slots.
+- [x] Extract shared custom hooks:
+  - `useHealth.js`: Centralized health polling hook for application layout and diagnostics.
+  - `useAnalysis.js`: Form management, execution handling, error states, and export actions for text, file, and URL inputs.
+- [x] Extract `AnalysisResults.jsx`: Reusable results dashboard component shared across all analysis views.
+- [x] Build dedicated page views in `src/pages/`:
+  - `DashboardPage.jsx`: Overview portal with quick action cards, supported engine status, and capability highlights.
+  - `AnalyzePage.jsx`: Dedicated raw text analysis workspace with auto-sample analysis.
+  - `DocumentsPage.jsx`: Multi-format document upload ingestion workspace (.txt, .pdf, .docx).
+  - `UrlAnalysisPage.jsx`: Webpage URL input workspace with SSRF-safe analysis.
+  - `HistoryPage.jsx`: History archive portal with Phase 6 MySQL preview and search/filter empty states.
+  - `SettingsPage.jsx`: Diagnostics, backend latency monitor, manual connectivity refresh, and engine specifications.
+  - `NotFoundPage.jsx`: 404 error page with quick links back to Dashboard.
+- [x] Update CSS design system in `src/styles/index.css` for sidebar, navigation states, responsive breakpoints, and cards.
+- [x] Resolve Starlette HTTP status deprecations in `backend/app/api/routes/analysis.py`.
+- [x] Verify complete backend test suite (40/40 passed in 25.6s) and frontend production build (`vite build` exit code 0).

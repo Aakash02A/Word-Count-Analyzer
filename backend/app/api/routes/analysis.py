@@ -25,14 +25,14 @@ def analyze_text(request: AnalysisRequest) -> AnalysisResponse:
     # Validation: empty or whitespace-only input
     if not raw_text or not raw_text.strip():
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="Input text cannot be empty or whitespace-only.",
         )
 
     # Validation: input text exceeding configured maximum length
     if len(raw_text) > settings.MAX_TEXT_LENGTH_CHARS:
         raise HTTPException(
-            status_code=status.HTTP_413_CONTENT_TOO_LARGE,
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
             detail=f"Input text exceeds maximum allowed size of {settings.MAX_TEXT_LENGTH_CHARS} characters.",
         )
 
@@ -75,7 +75,7 @@ async def analyze_file(
     if len(content_bytes) > settings.MAX_UPLOAD_SIZE_BYTES:
         max_mb = settings.MAX_UPLOAD_SIZE_BYTES // (1024 * 1024)
         raise HTTPException(
-            status_code=status.HTTP_413_CONTENT_TOO_LARGE,
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
             detail=f"Uploaded file exceeds maximum limit of {max_mb} MB.",
         )
 
@@ -83,7 +83,7 @@ async def analyze_file(
         extracted_text = document_service.extract_text_from_file(filename, content_bytes)
     except DocumentExtractionError as e:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=str(e),
         )
 
@@ -112,7 +112,7 @@ def analyze_url(request: UrlAnalysisRequest) -> AnalysisResponse:
         extracted_text = url_service.fetch_webpage_text(request.url)
     except URLExtractionError as e:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=str(e),
         )
 
