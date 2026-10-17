@@ -1,6 +1,7 @@
 """Services package."""
 from app.services.analyzer import TextAnalyzer
 from app.services.document_service import DocumentExtractionError, DocumentService, document_service
+from app.services.export_service import ExportService, export_service
 from app.services.nlp_service import NLPService, nlp_service
 from app.services.preprocessor import TextPreprocessor
 from app.services.spark_service import SparkService, spark_service
@@ -19,4 +20,6 @@ __all__ = [
     "URLExtractionError",
     "NLPService",
     "nlp_service",
+    "ExportService",
+    "export_service",
 ]

@@ -1,15 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { checkHealth, analyzeText, analyzeFile, analyzeUrl } from './services/api';
+import { checkHealth, analyzeText, analyzeFile, analyzeUrl, exportAnalysisCsv } from './services/api';
 import Header from './components/Header';
 import AnalysisWorkspace from './components/AnalysisWorkspace';
 import MetricsCards from './components/MetricsCards';
 import FrequencyTable from './components/FrequencyTable';
+import WordFrequencyChart from './components/WordFrequencyChart';
 import LengthDistribution from './components/LengthDistribution';
+import LengthDistributionChart from './components/LengthDistributionChart';
 import BigramPills from './components/BigramPills';
 import SentimentCard from './components/SentimentCard';
 import NounPhrasesPills from './components/NounPhrasesPills';
 import SystemDiagnostics from './components/SystemDiagnostics';
-import { Sparkles, FileText, Globe, Upload } from 'lucide-react';
+import { Sparkles, FileText, Globe, Upload, Download, BarChart2, Table, Activity } from 'lucide-react';
 
 const SAMPLE_TEXT = `Apache PySpark provides a robust, high-performance distributed DataFrame framework for big data processing. Word Intelligence integrates PySpark analytics with Natural Language Processing heuristics to transform unstructured content into structured insights. Analyzing token frequencies, bigrams, and word-length distributions allows researchers to understand linguistic patterns rapidly.`;
 
@@ -36,6 +38,11 @@ export default function App() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState(null);
   const [analysisError, setAnalysisError] = useState(null);
+
+  // Interactive Phase 5 view states
+  const [freqViewMode, setFreqViewMode] = useState('table'); // 'table' | 'chart'
+  const [lengthViewMode, setLengthViewMode] = useState('bars'); // 'bars' | 'chart'
+  const [isExporting, setIsExporting] = useState(false);
 
   const fetchHealth = async () => {
     setIsRefreshing(true);
@@ -124,6 +131,13 @@ export default function App() {
     setAnalysisError(null);
   };
 
+  const handleExportCsv = async () => {
+    if (!analysisResult) return;
+    setIsExporting(true);
+    await exportAnalysisCsv(analysisResult);
+    setIsExporting(false);
+  };
+
   useEffect(() => {
     fetchHealth();
     handleAnalyze();
@@ -148,7 +162,7 @@ export default function App() {
           Unstructured Content into<br />Actionable Linguistic Insights
         </h2>
         <p className="hero-subtitle">
-          Phase 4 Multi-Source Ingestion & NLP Engine active. Ingest raw text, documents (TXT, PDF, DOCX), or secure URLs with sentiment and noun phrase intelligence.
+          Phase 5 Interactive Dashboard & CSV Export. High-performance charts, searchable ranking distributions, and formula-safe RFC 4180 export.
         </p>
       </section>
 
@@ -178,29 +192,100 @@ export default function App() {
       {/* Analysis Results View */}
       {analysisResult && (
         <div className="results-container">
-          {/* Source Identification Banner */}
-          {analysisResult.metadata.source_name && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)', background: 'rgba(255,255,255,0.02)', padding: '0.5rem 1rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)' }}>
-              {analysisResult.metadata.source_type === 'file' ? <Upload size={16} color="var(--accent-emerald)" /> : <Globe size={16} color="var(--accent-cyan)" />}
-              <span>Source Analyzed: <strong style={{ color: 'var(--text-main)' }}>{analysisResult.metadata.source_name}</strong> ({analysisResult.metadata.source_type.toUpperCase()})</span>
+          {/* Action & Meta Header Bar */}
+          <div className="results-header-bar">
+            <div className="results-meta-badge">
+              {analysisResult.metadata.source_type === 'file' ? (
+                <Upload size={16} color="var(--accent-emerald)" />
+              ) : analysisResult.metadata.source_type === 'url' ? (
+                <Globe size={16} color="var(--accent-cyan)" />
+              ) : (
+                <FileText size={16} color="var(--primary)" />
+              )}
+              <span>
+                Source: <strong style={{ color: 'var(--text-main)' }}>{analysisResult.metadata.source_name || 'Direct Input'}</strong>
+                {' '}({analysisResult.metadata.source_type.toUpperCase()})
+              </span>
+              <span style={{ color: 'var(--border-subtle)' }}>•</span>
+              <span style={{ fontFamily: 'monospace', color: 'var(--text-dim)' }}>
+                {analysisResult.metadata.engine_used} ({analysisResult.metadata.execution_time_ms || 0}ms)
+              </span>
             </div>
-          )}
+
+            <button
+              className="btn-export"
+              onClick={handleExportCsv}
+              disabled={isExporting}
+            >
+              <Download size={15} />
+              <span>{isExporting ? 'Exporting...' : 'Export CSV Report'}</span>
+            </button>
+          </div>
 
           {/* Metric Summary Cards */}
           <MetricsCards result={analysisResult} />
 
           {/* Two-Column Detail View */}
           <div className="results-columns">
-            {/* Left Column: Frequency Ranking & Noun Phrases */}
+            {/* Left Column: Frequency Ranking (Table or Visual Chart) & Noun Phrases */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-              <FrequencyTable topWords={analysisResult.top_words} />
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '0.5rem', gap: '0.25rem' }}>
+                  <button
+                    className={`view-toggle-btn ${freqViewMode === 'table' ? 'active' : ''}`}
+                    onClick={() => setFreqViewMode('table')}
+                  >
+                    <Table size={13} />
+                    <span>Table</span>
+                  </button>
+                  <button
+                    className={`view-toggle-btn ${freqViewMode === 'chart' ? 'active' : ''}`}
+                    onClick={() => setFreqViewMode('chart')}
+                  >
+                    <BarChart2 size={13} />
+                    <span>Chart</span>
+                  </button>
+                </div>
+
+                {freqViewMode === 'table' ? (
+                  <FrequencyTable topWords={analysisResult.top_words} />
+                ) : (
+                  <WordFrequencyChart topWords={analysisResult.top_words} />
+                )}
+              </div>
+
               <NounPhrasesPills phrases={analysisResult.noun_phrases} />
             </div>
 
-            {/* Right Column: Sentiment, Length Distribution, Bigrams */}
+            {/* Right Column: Sentiment, Length Distribution (Bars or Chart Curve), Bigrams */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
               <SentimentCard sentiment={analysisResult.sentiment} />
-              <LengthDistribution distribution={analysisResult.word_length_distribution} />
+
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '0.5rem', gap: '0.25rem' }}>
+                  <button
+                    className={`view-toggle-btn ${lengthViewMode === 'bars' ? 'active' : ''}`}
+                    onClick={() => setLengthViewMode('bars')}
+                  >
+                    <Table size={13} />
+                    <span>Bars</span>
+                  </button>
+                  <button
+                    className={`view-toggle-btn ${lengthViewMode === 'chart' ? 'active' : ''}`}
+                    onClick={() => setLengthViewMode('chart')}
+                  >
+                    <Activity size={13} />
+                    <span>Curve</span>
+                  </button>
+                </div>
+
+                {lengthViewMode === 'bars' ? (
+                  <LengthDistribution distribution={analysisResult.word_length_distribution} />
+                ) : (
+                  <LengthDistributionChart distribution={analysisResult.word_length_distribution} />
+                )}
+              </div>
+
               <BigramPills bigrams={analysisResult.bigrams} />
             </div>
           </div>
@@ -208,7 +293,7 @@ export default function App() {
       )}
 
       {/* System Diagnostics */}
-      <SystemDiagnostics healthState={healthState} activePhase="Phase 4: Ingestion & NLP" />
+      <SystemDiagnostics healthState={healthState} activePhase="Phase 5: Interactive Dashboard & CSV Export" />
 
       {/* Footer */}
       <footer className="footer">

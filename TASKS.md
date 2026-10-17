@@ -9,7 +9,7 @@
 | **Phase 2** | Core Analytics (Tokenization, Frequency, Statistics) | **Completed** | Tests passing (17/17), deterministic stats, live UI |
 | **Phase 3** | PySpark Integration & Benchmarks | **Completed** | Tests passing (20/20), DataFrame pipeline & benchmarks |
 | **Phase 4** | Document Ingestion (TXT, PDF, DOCX) & NLP | **Completed** | Tests passing (37/37), Multi-source ingestion & NLP |
-| **Phase 5** | Interactive React Dashboard & CSV Export | *Pending Approval* | Scheduled after Phase 4 |
+| **Phase 5** | Interactive React Dashboard & CSV Export | **Completed** | Tests passing (40/40), Chart.js visualizations, CSV export |
 | **Phase 6** | MySQL Database & History Persistence | *Pending Approval* | Scheduled after Phase 5 |
 | **Phase 7** | Security Hardening & Quality Review | *Pending Approval* | Scheduled after Phase 6 |
 | **Phase 8** | Production Deployment & Public HTTPS Access | *Pending Approval* | Scheduled after Phase 7 |
@@ -77,3 +77,19 @@
 - [x] Add automated test suites: `test_documents.py`, `test_urls.py`, and `test_nlp.py` (37 tests passing).
 - [x] Build frontend multi-source tabbed ingestion (Raw Text, Document Upload, Webpage URL) and NLP visualization components (`SentimentCard`, `NounPhrasesPills`).
 - [x] Verify production frontend build (`npm run build`).
+
+---
+
+## Phase 5 Checklist (Completed)
+
+- [x] Create `ExportService` with RFC 4180 CSV generation and CWE-1236 formula injection sanitization (`=`, `+`, `-`, `@`, `\t`, `\r` prefix prevention).
+- [x] Create `POST /api/v1/export/csv` endpoint returning downloadable CSV with `Content-Disposition` header.
+- [x] Add `exportAnalysisCsv()` to frontend API client with blob download and auto-generated timestamped filenames.
+- [x] Create `WordFrequencyChart.jsx` — Chart.js bar chart for top word frequency visualization with dark-mode styling and hover tooltips.
+- [x] Create `LengthDistributionChart.jsx` — Chart.js smooth area curve for word-length distribution with gradient fill.
+- [x] Enhance `FrequencyTable.jsx` with real-time search filtering and multi-criteria sorting (frequency, alphabetical, word length).
+- [x] Add Table/Chart view toggle for word frequency section and Bars/Curve view toggle for length distribution section.
+- [x] Add results header bar with source metadata, engine info, execution time, and "Export CSV Report" button.
+- [x] Add CSS styles for toolbar, search input, sort select, view toggles, and export button.
+- [x] Create `backend/tests/test_export.py` with formula sanitization, CSV generation, and endpoint integration tests.
+- [x] Verify full pytest suite (40/40 passed) and production frontend build.
