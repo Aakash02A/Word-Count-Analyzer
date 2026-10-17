@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routes import health
+from app.api.routes import analysis, health
 from app.core.config import settings
 
 
@@ -30,6 +30,7 @@ def create_application() -> FastAPI:
 
     # Versioned API prefix endpoints
     app.include_router(health.router, prefix=settings.API_V1_STR, tags=["Health"])
+    app.include_router(analysis.router, prefix=settings.API_V1_STR, tags=["Analysis"])
 
     @app.get("/", include_in_schema=False)
     def root():

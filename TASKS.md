@@ -6,7 +6,7 @@
 |---|---|---|---|
 | **Phase 0** | Repository Inspection & Runtime Verification | **Completed** | Python 3.13, Java 21, Node 24, Docker 29 verified |
 | **Phase 1** | Foundation (FastAPI + React Vite + Health + Tests) | **Completed** | Tests passing (3/3), frontend builds, health 200 OK |
-| **Phase 2** | Core Analytics (Tokenization, Frequency, Statistics) | *Pending Approval* | Awaiting Phase 1 review |
+| **Phase 2** | Core Analytics (Tokenization, Frequency, Statistics) | **Completed** | Tests passing (17/17), deterministic stats, live UI |
 | **Phase 3** | PySpark Integration & Benchmarks | *Pending Approval* | Scheduled after Phase 2 |
 | **Phase 4** | Document Ingestion (TXT, PDF, DOCX) & NLP | *Pending Approval* | Scheduled after Phase 3 |
 | **Phase 5** | Interactive React Dashboard & CSV Export | *Pending Approval* | Scheduled after Phase 4 |
@@ -29,3 +29,18 @@
 - [x] Verify backend tests (`pytest backend/tests` - 3 passed).
 - [x] Verify frontend build (`npm run build` - successful).
 - [x] Document architecture and startup commands.
+
+---
+
+## Phase 2 Checklist (Completed)
+
+- [x] Implement `TextPreprocessor` for whitespace normalization, unicode NFC handling, and tokenization.
+- [x] Implement `TextAnalyzer` calculating total tokens, unique tokens, average word length, and raw character metrics.
+- [x] Implement deterministic word frequency rankings with percentage and alphabetical tie-breaking.
+- [x] Implement word-length distribution breakdown.
+- [x] Implement adjacent two-token bigram collocation extraction and counts.
+- [x] Create Pydantic models for request validation and structured analysis responses.
+- [x] Expose `POST /api/v1/analysis` with input validation (whitespace-only 422, oversized 413).
+- [x] Add comprehensive test suite in `backend/tests/test_analysis.py` (14 unit/integration tests).
+- [x] Build interactive React analysis workspace with real-time API integration, frequency tables, length distributions, and bigram pills.
+- [x] Verify complete test suite (17/17 passed) and production frontend build.

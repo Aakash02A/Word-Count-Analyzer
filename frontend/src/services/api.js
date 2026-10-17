@@ -38,6 +38,52 @@ export async function checkHealth() {
   }
 }
 
+/**
+ * Submits raw text for core linguistic and frequency analytics
+ * @param {object} params
+ * @param {string} params.text
+ * @param {number} [params.top_n=10]
+ * @param {boolean} [params.case_sensitive=false]
+ * @returns {Promise<{success: boolean, data?: object, error?: string}>}
+ */
+export async function analyzeText({ text, top_n = 10, case_sensitive = false }) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/v1/analysis`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify({
+        text,
+        top_n: Number(top_n),
+        case_sensitive: Boolean(case_sensitive),
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null);
+      const detail = errorData?.detail || `Error ${response.status}: ${response.statusText}`;
+      return {
+        success: false,
+        error: detail,
+      };
+    }
+
+    const data = await response.json();
+    return {
+      success: true,
+      data,
+    };
+  } catch (err) {
+    return {
+      success: false,
+      error: err.message || 'Failed to submit analysis request to backend',
+    };
+  }
+}
+
 export default {
   checkHealth,
+  analyzeText,
 };
