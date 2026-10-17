@@ -28,9 +28,15 @@ class URLService:
         """
         Validates that an IP address is publicly routable and not in private,
         loopback, link-local, multicast, or reserved ranges.
+        Handles IPv4-mapped IPv6 addresses.
         """
         try:
             ip = ipaddress.ip_address(ip_str)
+
+            # Check if IPv6 maps to an underlying IPv4 address
+            if hasattr(ip, "ipv4_mapped") and ip.ipv4_mapped:
+                return cls.is_ip_allowed(str(ip.ipv4_mapped))
+
             # Disallow private, loopback, link-local, multicast, and reserved addresses
             if (
                 ip.is_private
@@ -62,6 +68,19 @@ class URLService:
         # Disallow plain localhost strings directly
         if hostname.lower() in ("localhost", "127.0.0.1", "::1", "0.0.0.0"):
             raise URLExtractionError("Access to localhost or internal network destinations is forbidden.")
+
+        # Check for obfuscated integer or hex IP hostnames
+        try:
+            if hostname.isdigit():
+                direct_ip = ipaddress.ip_address(int(hostname))
+                if not cls.is_ip_allowed(str(direct_ip)):
+                    raise URLExtractionError(f"Destination '{hostname}' resolves to forbidden IP address '{direct_ip}'.")
+            elif hostname.startswith("0x") or hostname.startswith("0X"):
+                direct_ip = ipaddress.ip_address(int(hostname, 16))
+                if not cls.is_ip_allowed(str(direct_ip)):
+                    raise URLExtractionError(f"Destination '{hostname}' resolves to forbidden IP address '{direct_ip}'.")
+        except (ValueError, OverflowError):
+            pass
 
         # DNS Resolution & IP Check
         try:

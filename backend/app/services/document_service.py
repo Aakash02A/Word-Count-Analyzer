@@ -6,6 +6,7 @@ import docx
 import pypdf
 
 from app.core.config import settings
+from app.core.security import sanitize_filename
 
 
 class DocumentExtractionError(Exception):
@@ -23,13 +24,14 @@ class DocumentService:
     @classmethod
     def validate_file(cls, filename: str, file_size: int) -> str:
         """
-        Validates file extension and size constraints.
+        Validates file extension and size constraints after sanitization.
         Returns the normalized lowercase file extension.
         """
-        if not filename:
+        if not filename or not filename.strip():
             raise DocumentExtractionError("No filename provided.")
 
-        ext = Path(filename).suffix.lower()
+        safe_name = sanitize_filename(filename)
+        ext = Path(safe_name).suffix.lower()
         if ext not in cls.SUPPORTED_EXTENSIONS:
             allowed = ", ".join(cls.SUPPORTED_EXTENSIONS)
             raise DocumentExtractionError(

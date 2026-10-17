@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, s
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
+from app.core.security import sanitize_filename
 from app.db.session import get_db_optional
 from app.schemas.analysis import AnalysisRequest, AnalysisResponse, UrlAnalysisRequest
 from app.services.analyzer import TextAnalyzer
@@ -88,7 +89,7 @@ async def analyze_file(
     """
     Validates uploaded file, extracts plain text, and runs the analytics pipeline.
     """
-    filename = file.filename or "unknown"
+    filename = sanitize_filename(file.filename or "unknown")
 
     try:
         content_bytes = await file.read()

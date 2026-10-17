@@ -60,6 +60,10 @@ class Settings(BaseSettings):
     DATABASE_POOL_PRE_PING: bool = True
     ENABLE_DATABASE_HISTORY: bool = True
 
+    # Security & Abuse Prevention (Phase 7)
+    RATE_LIMIT_ENABLED: bool = True
+    RATE_LIMIT_REQUESTS_PER_MINUTE: int = 120
+
     @property
     def database_url(self) -> str:
         if self.SQLALCHEMY_DATABASE_URI:

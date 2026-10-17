@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes import analysis, export, health, history, readiness
 from app.core.config import settings
+from app.core.security import RateLimitMiddleware, SecurityHeadersMiddleware
 from app.services.spark_service import spark_service
 
 
@@ -27,7 +28,13 @@ def create_application() -> FastAPI:
         lifespan=lifespan,
     )
 
-    # Configure CORS
+    # Security Headers Middleware
+    app.add_middleware(SecurityHeadersMiddleware)
+
+    # Sliding Window Rate Limiting Middleware
+    app.add_middleware(RateLimitMiddleware)
+
+    # Configure CORS with strict origin handling
     origins = [str(origin).rstrip("/") for origin in settings.BACKEND_CORS_ORIGINS]
     app.add_middleware(
         CORSMiddleware,

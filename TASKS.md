@@ -12,7 +12,7 @@
 | **Phase 5** | Interactive React Dashboard & CSV Export | **Completed** | Tests passing (40/40), Chart.js visualizations, CSV export |
 | **Phase 5.5** | UI Navigation & Layout Refactoring | **Completed** | React Router v7, 7 modular views, sidebar/mobile layout, 40/40 tests |
 | **Phase 6** | MySQL Database & History Persistence | **Completed** | Tests passing (44/44), Alembic migrations, full UI replay |
-| **Phase 7** | Security Hardening & Quality Review | *Pending Approval* | Scheduled after Phase 6 |
+| **Phase 7** | Security Hardening & Quality Review | **Completed** | Tests passing (49/49), Security headers, Rate limiting, SSRF defense |
 | **Phase 8** | Production Deployment & Public HTTPS Access | *Pending Approval* | Scheduled after Phase 7 |
 
 ---
@@ -146,3 +146,26 @@
 - [x] Build rich interactive `HistoryPage.jsx` with search, source/engine filtering, stats cards, and 1-click full analysis replay and CSV export.
 - [x] Enhance `SettingsPage.jsx` with live MySQL ping latency and database readiness diagnostics.
 - [x] Verify full backend test suite (**44/44 passed** in 26.09s) and production frontend build (`npm run build` exit code 0).
+
+---
+
+## Phase 7 Checklist (Completed)
+
+- [x] Implement `SecurityHeadersMiddleware` in `backend/app/core/security.py` injecting:
+  - `X-Content-Type-Options: nosniff`
+  - `X-Frame-Options: DENY`
+  - `X-XSS-Protection: 1; mode=block`
+  - `Referrer-Policy: strict-origin-when-cross-origin`
+  - `Permissions-Policy: geolocation=(), camera=(), microphone=()`
+  - Restrictive `Content-Security-Policy` with Google Fonts and local asset permissions.
+- [x] Implement in-memory sliding window `RateLimiter` and `RateLimitMiddleware` in `backend/app/core/security.py`:
+  - Protects compute-heavy endpoints (`/api/v1/analysis*`, `/api/v1/export*`) against abusive bot traffic.
+  - Returns standard `HTTP 429 Too Many Requests` with `Retry-After` header when threshold is reached.
+  - Automatically exempts `/health` and `/readiness` probes from throttling.
+- [x] Implement `sanitize_filename()` in `backend/app/core/security.py` stripping directory traversal (`../`), null bytes (`\0`), control characters, and length-bounding uploaded filenames.
+- [x] Harden SSRF protections in `backend/app/services/url_service.py`:
+  - Block IPv4-mapped IPv6 loopbacks (`::ffff:127.0.0.1`).
+  - Block obfuscated integer and hex IP hostnames (`2130706433`, `0x7f000001`).
+- [x] Create comprehensive security automated test suite in `backend/tests/test_security.py` (5 tests passing).
+- [x] Verify full backend test suite (**49/49 passed** in 29.38s) and production frontend build (`npm run build` exit code 0).
+
