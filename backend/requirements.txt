@@ -10,3 +10,7 @@ beautifulsoup4>=4.12.0
 textblob>=0.18.0
 nltk>=3.9.0
 python-multipart>=0.0.12
+sqlalchemy>=2.0.0,<3.0.0
+pymysql>=1.1.0,<2.0.0
+alembic>=1.13.0,<2.0.0
+cryptography>=43.0.0

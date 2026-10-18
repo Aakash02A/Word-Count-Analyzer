@@ -1,0 +1,16 @@
+# Optional Docker Compose override for local development and debugging
+# Copy to docker-compose.override.yml if you need direct host port access to MySQL and Backend
+services:
+  mysql:
+    ports:
+      - "3306:3306"
+
+  backend:
+    ports:
+      - "8000:8000"
+    environment:
+      - ENVIRONMENT=development
+
+  frontend:
+    ports:
+      - "5173:80"
