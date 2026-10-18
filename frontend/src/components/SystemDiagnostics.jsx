@@ -1,7 +1,7 @@
 import React from 'react';
 import { Server } from 'lucide-react';
 
-export default function SystemDiagnostics({ healthState, activePhase = 'Phase 2: Core Analytics' }) {
+export default function SystemDiagnostics({ healthState }) {
   return (
     <div className="diagnostics-panel">
       <div className="diagnostics-header">
@@ -42,9 +42,9 @@ export default function SystemDiagnostics({ healthState, activePhase = 'Phase 2:
         </div>
 
         <div className="diag-item">
-          <span className="diag-label">Active Phase</span>
-          <span className="diag-val" style={{ color: 'var(--accent-cyan)' }}>
-            {activePhase}
+          <span className="diag-label">System Status</span>
+          <span className="diag-val" style={{ color: 'var(--accent-emerald)', fontWeight: 600 }}>
+            Operational
           </span>
         </div>
 

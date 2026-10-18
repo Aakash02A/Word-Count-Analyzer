@@ -6,7 +6,7 @@ import {
   Upload,
   Globe,
   Clock,
-  Settings,
+  Activity,
   Layers,
 } from 'lucide-react';
 import StatusBadge from '../StatusBadge';
@@ -17,7 +17,7 @@ const NAV_ITEMS = [
   { to: '/documents', label: 'Documents', icon: Upload },
   { to: '/url', label: 'Webpage URL', icon: Globe },
   { to: '/history', label: 'History', icon: Clock },
-  { to: '/settings', label: 'Settings', icon: Settings },
+  { to: '/settings', label: 'System Status', icon: Activity },
 ];
 
 export default function Sidebar({ healthState }) {

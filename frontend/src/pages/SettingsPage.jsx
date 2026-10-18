@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import { Settings, Server, Cpu, Database, RefreshCw, CheckCircle2, XCircle, Clock } from 'lucide-react';
+import { Activity, Server, Cpu, Database, RefreshCw, CheckCircle2, XCircle, Clock } from 'lucide-react';
 import PageHeader from '../components/layout/PageHeader';
 import SystemDiagnostics from '../components/SystemDiagnostics';
 import { checkReadiness } from '../services/api';
@@ -43,9 +43,9 @@ export default function SettingsPage() {
   return (
     <div className="page-content">
       <PageHeader
-        icon={<Settings size={22} color="var(--primary)" />}
-        title="Settings & System Diagnostics"
-        description="Inspect backend connectivity, engine configurations, diagnostic metadata, and operational status."
+        icon={<Activity size={22} color="var(--primary)" />}
+        title="System Status & Diagnostics"
+        description="Inspect backend connectivity, engine configurations, database status, and operational health."
       >
         <button
           onClick={handleFullRefresh}
@@ -58,7 +58,7 @@ export default function SettingsPage() {
       </PageHeader>
 
       {/* Diagnostics Panel */}
-      <SystemDiagnostics healthState={healthState} activePhase="Phase 6: MySQL Database & History" />
+      <SystemDiagnostics healthState={healthState} />
 
       {/* Engine & Architecture Cards */}
       <div
