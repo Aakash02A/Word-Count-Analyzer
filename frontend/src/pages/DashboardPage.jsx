@@ -18,6 +18,7 @@ import {
   Clock,
   CheckCircle2,
   ExternalLink,
+  Image as ImageIcon,
 } from 'lucide-react';
 import { fetchHistoryStats, fetchHistory } from '../services/api';
 
@@ -54,6 +55,17 @@ const QUICK_ACTIONS = [
     desc: 'Extract and analyze text from public websites protected by anti-SSRF DNS pinning.',
     tags: ['SSRF Shield', 'DNS Validation', 'HTML Cleaner'],
     actionText: 'Extract Webpage',
+  },
+  {
+    to: '/images',
+    icon: ExternalLink,
+    color: 'var(--accent-amber)',
+    bg: 'rgba(245, 158, 11, 0.12)',
+    border: 'rgba(245, 158, 11, 0.25)',
+    title: 'Image OCR Extraction',
+    desc: 'Upload photos, screenshots, or scanned images to extract and analyze printed text.',
+    tags: ['Tesseract OCR', 'PNG/JPG/WEBP', 'Linguistic NLP'],
+    actionText: 'Extract Image',
   },
 ];
 
@@ -125,6 +137,8 @@ export default function DashboardPage() {
         return <Upload size={16} color="var(--accent-emerald)" />;
       case 'url':
         return <Globe size={16} color="var(--accent-cyan)" />;
+      case 'image':
+        return <ImageIcon size={16} color="var(--accent-amber)" />;
       default:
         return <FileText size={16} color="var(--primary)" />;
     }

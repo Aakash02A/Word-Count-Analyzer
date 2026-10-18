@@ -7,7 +7,7 @@ import LengthDistributionChart from './LengthDistributionChart';
 import BigramPills from './BigramPills';
 import SentimentCard from './SentimentCard';
 import NounPhrasesPills from './NounPhrasesPills';
-import { FileText, Globe, Upload, Download, BarChart2, Table, Activity } from 'lucide-react';
+import { FileText, Globe, Upload, Image as ImageIcon, Download, BarChart2, Table, Activity, Copy, Check } from 'lucide-react';
 
 /**
  * Reusable analysis results panel.
@@ -22,7 +22,17 @@ export default function AnalysisResults({
   isExporting,
   onExportCsv,
 }) {
+  const [copied, setCopied] = React.useState(false);
+
   if (!analysisResult) return null;
+
+  const handleCopyExtracted = () => {
+    if (analysisResult.extracted_text) {
+      navigator.clipboard.writeText(analysisResult.extracted_text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
 
   return (
     <div className="results-container">
@@ -33,6 +43,8 @@ export default function AnalysisResults({
             <Upload size={16} color="var(--accent-emerald)" />
           ) : analysisResult.metadata.source_type === 'url' ? (
             <Globe size={16} color="var(--accent-cyan)" />
+          ) : analysisResult.metadata.source_type === 'image' ? (
+            <ImageIcon size={16} color="var(--accent-amber)" />
           ) : (
             <FileText size={16} color="var(--primary)" />
           )}
@@ -55,6 +67,55 @@ export default function AnalysisResults({
           <span>{isExporting ? 'Exporting...' : 'Export CSV Report'}</span>
         </button>
       </div>
+
+      {/* Extracted Text (OCR) Preview Panel if present */}
+      {analysisResult.extracted_text && (
+        <div
+          style={{
+            background: 'var(--bg-card)',
+            border: '1px solid var(--border-subtle)',
+            borderRadius: 'var(--radius-lg)',
+            padding: '1.25rem 1.5rem',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '0.75rem',
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <ImageIcon size={16} color="var(--accent-amber)" />
+              <span style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-main)' }}>
+                Extracted Text from Image (OCR)
+              </span>
+            </div>
+            <button
+              onClick={handleCopyExtracted}
+              className="btn-secondary"
+              style={{ padding: '0.3rem 0.65rem', fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}
+            >
+              {copied ? <Check size={13} color="var(--accent-emerald)" /> : <Copy size={13} />}
+              <span>{copied ? 'Copied!' : 'Copy Text'}</span>
+            </button>
+          </div>
+          <p
+            style={{
+              margin: 0,
+              fontSize: '0.85rem',
+              color: 'var(--text-muted)',
+              lineHeight: '1.6',
+              whiteSpace: 'pre-wrap',
+              maxHeight: '160px',
+              overflowY: 'auto',
+              background: 'var(--bg-secondary)',
+              padding: '0.75rem 1rem',
+              borderRadius: 'var(--radius-sm)',
+              border: '1px solid var(--border-subtle)',
+            }}
+          >
+            {analysisResult.extracted_text}
+          </p>
+        </div>
+      )}
 
       {/* Metric Summary Cards */}
       <MetricsCards result={analysisResult} />

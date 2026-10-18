@@ -5,6 +5,7 @@ import AppLayout from './components/layout/AppLayout';
 import DashboardPage from './pages/DashboardPage';
 import AnalyzePage from './pages/AnalyzePage';
 import DocumentsPage from './pages/DocumentsPage';
+import ImagesPage from './pages/ImagesPage';
 import UrlAnalysisPage from './pages/UrlAnalysisPage';
 import HistoryPage from './pages/HistoryPage';
 import SettingsPage from './pages/SettingsPage';
@@ -27,6 +28,7 @@ export default function App() {
           <Route index element={<DashboardPage />} />
           <Route path="analyze" element={<AnalyzePage />} />
           <Route path="documents" element={<DocumentsPage />} />
+          <Route path="images" element={<ImagesPage />} />
           <Route path="url" element={<UrlAnalysisPage />} />
           <Route path="history" element={<HistoryPage />} />
           <Route path="settings" element={<SettingsPage />} />

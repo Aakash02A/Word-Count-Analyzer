@@ -89,6 +89,7 @@ class AnalysisMetadata(BaseModel):
     source_name: Optional[str] = None
     execution_time_ms: Optional[float] = None
     spark_version: Optional[str] = None
+    ocr_metadata: Optional[dict] = None
 
 
 class AnalysisResponse(BaseModel):
@@ -102,4 +103,5 @@ class AnalysisResponse(BaseModel):
     bigrams: List[BigramItem]
     sentiment: Optional[SentimentResult] = None
     noun_phrases: List[str] = []
+    extracted_text: Optional[str] = None
     metadata: AnalysisMetadata

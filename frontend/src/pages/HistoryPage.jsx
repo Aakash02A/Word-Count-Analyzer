@@ -10,6 +10,7 @@ import {
   FileText,
   Upload,
   Globe,
+  Image as ImageIcon,
   ArrowLeft,
   Calendar,
   Layers,
@@ -133,6 +134,8 @@ export default function HistoryPage() {
         return <Upload size={14} color="var(--accent-emerald)" />;
       case 'url':
         return <Globe size={14} color="var(--accent-cyan)" />;
+      case 'image':
+        return <ImageIcon size={14} color="var(--accent-amber)" />;
       case 'text':
       default:
         return <FileText size={14} color="var(--primary)" />;
@@ -443,6 +446,7 @@ export default function HistoryPage() {
                   <option value="all">All Sources</option>
                   <option value="text">Raw Text</option>
                   <option value="file">Document File</option>
+                  <option value="image">Image (OCR)</option>
                   <option value="url">Webpage URL</option>
                 </select>
               </div>

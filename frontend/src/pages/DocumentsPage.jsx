@@ -54,7 +54,7 @@ export default function DocumentsPage() {
         </div>
 
         <p style={{ fontSize: '0.75rem', color: 'var(--text-dim)', marginBottom: '1rem' }}>
-          Scanned PDFs without embedded text may not produce results. OCR is not currently supported.
+          Scanned PDFs without embedded text may not produce results. Use the <strong>Images (OCR)</strong> workspace to extract text from images and document scans.
         </p>
 
         {/* Controls Row */}

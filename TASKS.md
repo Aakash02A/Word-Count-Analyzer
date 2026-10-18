@@ -14,6 +14,7 @@
 | **Phase 6** | MySQL Database & History Persistence | **Completed** | Tests passing (44/44), Alembic migrations, full UI replay |
 | **Phase 7** | Security Hardening & Quality Review | **Completed** | Tests passing (49/49), Security headers, Rate limiting, SSRF defense |
 | **Phase 8** | Production Deployment & Containerization | **Completed** | Multi-stage Dockerfiles, Docker Compose, Nginx reverse proxy |
+| **Section 21** | Image Text Extraction & Analysis (OCR) | **Completed** | Tests passing (59/59), Tesseract OCR service, `/images` workspace |
 
 ---
 
@@ -192,5 +193,30 @@
   - `frontend`: Nginx container exposing Port 80, dependent on healthy backend.
 - [x] Create local development override example `docker-compose.override.yml.example` for host port exposure.
 - [x] Update root `README.md` with complete architecture, Docker Compose startup, local dev commands, and test verification.
+
+---
+
+## Section 21 Checklist (Completed) — Image Text Extraction and Analysis (OCR)
+
+- [x] Configure image processing dependencies: `Pillow>=10.0.0` and `pytesseract>=0.3.10` in `backend/requirements.txt`.
+- [x] Configure system dependencies in `backend/Dockerfile` with `tesseract-ocr` and `tesseract-ocr-eng`.
+- [x] Implement `OCRService` in `backend/app/services/ocr_service.py`:
+  - Validation for PNG, JPG, JPEG, and WEBP image files.
+  - Decompression-bomb protection (`Image.MAX_IMAGE_PIXELS`).
+  - Image preprocessing (grayscale conversion, EXIF auto-orientation, contrast enhancement).
+  - Tesseract binary discovery across settings, environment, PATH, and standard Windows/Linux locations.
+  - Controlled error responses for missing OCR binary, timeouts, empty extracted text, and corrupted files.
+- [x] Expose `POST /api/v1/analysis/image` endpoint with multipart image upload, TextAnalyzer integration, and MySQL history persistence.
+- [x] Add frontend API client function `analyzeImage()` in `frontend/src/services/api.js`.
+- [x] Enhance `useAnalysis.js` hook with `'image'` mode and cleanup.
+- [x] Build dedicated `ImagesPage.jsx` workspace (`/images`) featuring:
+  - Drag-and-drop file upload zone supporting PNG, JPG, JPEG, WEBP.
+  - Live client-side image thumbnail preview.
+  - Analysis options (case sensitive, top-N, engine selection).
+  - Extracted text preview panel with 1-click clipboard copy.
+  - Full interactive `AnalysisResults` dashboard with Chart.js charts and CSV export.
+- [x] Update `Sidebar.jsx`, `App.jsx`, `DashboardPage.jsx`, and `DocumentsPage.jsx` with Image OCR navigation and action cards.
+- [x] Create comprehensive automated test suite in `backend/tests/test_ocr.py` (10 tests passing).
+- [x] Verify full backend test suite (**59/59 passed** in 59.23s) and frontend production build (`vite build` exit code 0).
 
 

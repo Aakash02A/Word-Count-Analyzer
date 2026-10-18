@@ -163,6 +163,50 @@ export async function analyzeFile({ file, top_n = 10, case_sensitive = false, en
 }
 
 /**
+ * Uploads an image (PNG, JPG, WEBP) for OCR text extraction and analysis
+ * @param {object} params
+ * @param {File} params.file
+ * @param {number} [params.top_n=10]
+ * @param {boolean} [params.case_sensitive=false]
+ * @param {string} [params.engine='python']
+ * @returns {Promise<{success: boolean, data?: object, error?: string}>}
+ */
+export async function analyzeImage({ file, top_n = 10, case_sensitive = false, engine = 'python' }) {
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('top_n', String(top_n));
+    formData.append('case_sensitive', String(case_sensitive));
+    formData.append('engine', String(engine));
+
+    const response = await fetch(`${API_BASE_URL}/api/v1/analysis/image`, {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null);
+      const detail = errorData?.detail || `Error ${response.status}: ${response.statusText}`;
+      return {
+        success: false,
+        error: detail,
+      };
+    }
+
+    const data = await response.json();
+    return {
+      success: true,
+      data,
+    };
+  } catch (err) {
+    return {
+      success: false,
+      error: err.message || 'Failed to upload and extract text from image',
+    };
+  }
+}
+
+/**
  * Submits a public webpage URL for SSRF-safe fetching and analysis
  * @param {object} params
  * @param {string} params.url

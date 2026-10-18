@@ -1,12 +1,12 @@
 import { useState, useCallback } from 'react';
-import { analyzeText, analyzeFile, analyzeUrl, exportAnalysisCsv } from '../services/api';
+import { analyzeText, analyzeFile, analyzeImage, analyzeUrl, exportAnalysisCsv } from '../services/api';
 
 const SAMPLE_TEXT = `Apache PySpark provides a robust, high-performance distributed DataFrame framework for big data processing. Word Intelligence integrates PySpark analytics with Natural Language Processing heuristics to transform unstructured content into structured insights. Analyzing token frequencies, bigrams, and word-length distributions allows researchers to understand linguistic patterns rapidly.`;
 
 /**
  * Shared hook for analysis logic.
  * Each analysis page uses this with its specific input mode.
- * @param {'text' | 'file' | 'url'} defaultMode
+ * @param {'text' | 'file' | 'image' | 'url'} defaultMode
  */
 export default function useAnalysis(defaultMode = 'text') {
   const [inputText, setInputText] = useState(defaultMode === 'text' ? SAMPLE_TEXT : '');
@@ -55,6 +55,18 @@ export default function useAnalysis(defaultMode = 'text') {
         case_sensitive: caseSensitive,
         engine,
       });
+    } else if (activeMode === 'image') {
+      if (!selectedFile) {
+        setAnalysisError('Please choose an image (.png, .jpg, .jpeg, or .webp) to upload.');
+        setIsAnalyzing(false);
+        return;
+      }
+      result = await analyzeImage({
+        file: selectedFile,
+        top_n: topN,
+        case_sensitive: caseSensitive,
+        engine,
+      });
     } else if (activeMode === 'url') {
       if (!inputUrl.trim()) {
         setAnalysisError('Please enter a public HTTP/HTTPS webpage URL to analyze.');
@@ -80,7 +92,7 @@ export default function useAnalysis(defaultMode = 'text') {
   const handleClear = useCallback((mode) => {
     const activeMode = mode || defaultMode;
     if (activeMode === 'text') setInputText('');
-    else if (activeMode === 'file') setSelectedFile(null);
+    else if (activeMode === 'file' || activeMode === 'image') setSelectedFile(null);
     else if (activeMode === 'url') setInputUrl('');
     setAnalysisResult(null);
     setAnalysisError(null);

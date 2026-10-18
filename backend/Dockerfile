@@ -3,9 +3,11 @@ FROM python:3.13-slim
 
 WORKDIR /app
 
-# Install system dependencies: JRE for Apache PySpark, curl for health checks, procps
+# Install system dependencies: JRE for Apache PySpark, Tesseract OCR for image text extraction, curl, procps
 RUN apt-get update && apt-get install -y --no-install-recommends \
     default-jre-headless \
+    tesseract-ocr \
+    tesseract-ocr-eng \
     curl \
     procps \
     && rm -rf /var/lib/apt/lists/*
